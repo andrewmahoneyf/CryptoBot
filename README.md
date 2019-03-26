@@ -12,9 +12,10 @@ This is an experimental terminal bot for auto trading on binance.com exchange
 
         [✓] Read Info [✓] Enable Trading [X] Enable Withdrawals
 
-4.  Create `.env` file and insert API and Secret Key
-    API_KEY=''
-    API_SECRET=''
+4.  Create `.env` file and insert API and Secret Keys
+        
+        API_KEY=''
+        API_SECRET=''
 
 5.  Optional: alter bot presets such as allocation or MACD periods in `constants.js`
 
