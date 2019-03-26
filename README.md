@@ -20,8 +20,9 @@ This is an experimental terminal bot for auto trading on binance.com exchange
 
 ## Dependencies
 
-    [binance-api-node](https://github.com/binance-exchange/binance-api-node)
-    [technicalindicators](https://github.com/anandanand84/technicalindicators)
+[binance-api-node](https://github.com/binance-exchange/binance-api-node)
+
+[technicalindicators](https://github.com/anandanand84/technicalindicators)
 
 ## Usage
 
@@ -47,20 +48,20 @@ This is an experimental terminal bot for auto trading on binance.com exchange
 
 ## Roadmap
 
-    - [x] Configure Binance API routes
-    - [x] Set main structure with balance, budget, and allocation functionality
-    - [x] Place buy and sell orders
-    - [x] Calculate MACD values
-    - [ ] Calculate RSI values
-    - [ ] Get sentiment analysis from Twitter or StockTwits
-    - [ ] Get major news alerts
-    - [ ] Intergrate [coindar callendar](https://coindar.org) for upcoming news
-    - [ ] Develop algo for selecting top 5 altcoins
-    - [ ] Finish app tests
-    - [ ] Release V1
-    - [ ] Add configurations for other technical indicators
-    - [ ] Integrate Docker
-    - [ ] Release V2
+- [x] Configure Binance API routes
+- [x] Set main structure with balance, budget, and allocation functionality
+- [x] Place buy and sell orders
+- [x] Calculate MACD values
+- [ ] Calculate RSI values
+- [ ] Get sentiment analysis from Twitter or StockTwits
+- [ ] Get major news alerts
+- [ ] Intergrate [coindar callendar](https://coindar.org) for upcoming news
+- [ ] Develop algo for selecting top 5 altcoins
+- [ ] Finish app tests
+- [ ] Release V1
+- [ ] Add configurations for other technical indicators
+- [ ] Integrate Docker
+- [ ] Release V2
 
 ## License
 
