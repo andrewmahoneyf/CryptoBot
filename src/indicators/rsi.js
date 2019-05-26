@@ -1,2 +1,2 @@
 // TODO: function to check current RSI level
-const testRSI = async () => {};
+export const testRSI = async () => {};

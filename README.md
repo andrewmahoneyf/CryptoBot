@@ -10,12 +10,12 @@ This is an experimental terminal bot for auto trading on binance.com exchange
 2.  Enable Two-factor Authentication
 3.  Go API Center, [Create New](https://www.binance.com/userCenter/createApi.html) Api Key
 
-        [✓] Read Info [✓] Enable Trading [X] Enable Withdrawals
+        [✓] Read Info [✓] Enable Trading [] Enable Withdrawals
 
 4.  Create `.env` file and insert API and Secret Keys
-        
-        API_KEY=''
-        API_SECRET=''
+      
+     API_KEY=''
+    API_SECRET=''
 
 5.  Optional: alter bot presets such as allocation or MACD periods in `constants.js`
 

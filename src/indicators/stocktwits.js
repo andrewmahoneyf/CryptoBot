@@ -1,2 +1,2 @@
 // TODO: function to get twitter or StockTwits sentiment
-const testSentiment = async () => {};
+export const testSentiment = async () => {};

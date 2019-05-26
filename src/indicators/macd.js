@@ -5,14 +5,14 @@ import { MACD } from 'technicalindicators';
 
 /* 
   function to check for bear/bull crosses in MACD
-  return bool true if positive histogram
+  return bool true if positive histogram for all time intervals
 */
 export const testMACD = async (symbol, pair) => {
   let allMACDsPass = true;
   symbol += pair;
 
   if ((pair = 'USDT')) {
-    await asyncForEach(CONST.USD_CHARTS, async interval => {
+    await asyncForEach(CONST.USD_CHART_INTERVALS, async interval => {
       const current = await getMACD(symbol, interval);
       if (current.histogram < 0) {
         allMACDsPass = false;
@@ -20,7 +20,7 @@ export const testMACD = async (symbol, pair) => {
       console.log('MACD', symbol, interval, current.histogram);
     });
   } else {
-    await asyncForEach(CONST.BTC_CHARTS, async interval => {
+    await asyncForEach(CONST.BTC_CHART_INTERVALS, async interval => {
       const current = await getMACD(symbol, interval);
       if (current.histogram < 0) {
         allMACDsPass = false;
