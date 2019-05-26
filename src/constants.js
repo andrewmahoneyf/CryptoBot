@@ -20,7 +20,7 @@ export const ALLOCATION = {
   VET: 0.05
 };
 
-// Coins will be tested if you have remaining USD funds
+// Coins to be tested if you have remaining USD funds
 export const SUBSTITUTES = [
   'ENJ',
   'BAT',
@@ -39,6 +39,16 @@ export const SUBSTITUTES = [
   // 'NPXS'
 ];
 
+/*
+  ┌────────────── minute (Valid range: 0-59)
+  | ┌──────────── hour (valid range: 0-23)
+  | | ┌────────── day of the month (Valid range: 1-31)
+  | | | ┌──────── month (Valid range: 1-12 or names of the months)
+  | | | | ┌────── day of the week (valid range: 0-7 or names of the days: both 0 and 7 denotes Sunday)
+  * * * * *
+*/
+export const CRON_SCHEDULE = '1,31 * * * *';
+
 // Maximum percentage of total budget a subtitute can cover
 export const MAX_SUBSTITUTE_PERCENTAGE = 0.08;
 
@@ -46,11 +56,9 @@ export const MAX_SUBSTITUTE_PERCENTAGE = 0.08;
 export const USD_TRADE_MIN = 50;
 
 // 1m, 3m, 5m, 15m, 30m, 1h, 2h, 4h, 6h, 8h, 12h, 1d, 3d, 1w, 1M
-export const USD_CHART_INTERVALS = ['2h', '1h', '30m'];
-export const BTC_CHART_INTERVALS = ['2h', '1h', '30m'];
+export const CHART_INTERVALS = ['2h', '1h', '30m'];
 
 export const MACD_INPUTS = {
-  values: [],
   fastPeriod: 8,
   slowPeriod: 21,
   signalPeriod: 3,
@@ -58,7 +66,6 @@ export const MACD_INPUTS = {
   SimpleMASignal: false
 };
 
-export const RSI = {
-  length: 14,
-  source: 'close'
+export const RSI_INPUTS = {
+  period: 14
 };

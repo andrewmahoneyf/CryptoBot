@@ -13,8 +13,8 @@ This is an experimental terminal bot for auto trading on binance.com exchange
         [✓] Read Info [✓] Enable Trading [] Enable Withdrawals
 
 4.  Create `.env` file and insert API and Secret Keys
-      
-     API_KEY=''
+
+    API_KEY=''
     API_SECRET=''
 
 5.  Optional: alter bot presets such as allocation or MACD periods in `constants.js`
@@ -53,7 +53,8 @@ This is an experimental terminal bot for auto trading on binance.com exchange
 - [x] Set main structure with balance, budget, and allocation functionality
 - [x] Place buy and sell orders
 - [x] Calculate MACD values
-- [ ] Calculate RSI values
+- [x] Calculate RSI values
+- [x] Setup cron task
 - [ ] Get sentiment analysis from Twitter or StockTwits
 - [ ] Get major news alerts
 - [ ] Intergrate [coindar callendar](https://coindar.org) for upcoming news

@@ -1,3 +1,4 @@
+import cron from 'node-cron';
 import * as client from '../api/binance';
 import * as indicators from './indicators';
 import * as CONST from './constants';
@@ -12,37 +13,39 @@ import {
   cancelOrders
 } from './helpers';
 
-/* 
+/*
   ==============   Main app method  ================
   Checks API, gets balances, calculates total budget
   Decides to  trade in and out of BTC, ETH, LTC
   And then trades BTC holdings with ALtcoins
 */
-const main = async () => {
-  // 1. test connectivity to the API then log server time
-  (await client.ping) && client.time;
+cron
+  .schedule(CONST.CRON_SCHEDULE, async () => {
+    // 1. test connectivity to the API then log server time
+    (await client.ping) && client.time;
 
-  // 2. verify current funds
-  const balances = await getBalances();
-  console.log(`Balances: ${balances}`);
-  await asyncForEach(balances, async coin => {
-    await cancelOrders(coin.ASSET, 'USDT');
-  });
-  const budget = await getBudget(balances);
-  console.log(`Budget: ${budget}`);
+    // 2. verify current funds
+    const balances = await getBalances();
+    console.log(`Balances: ${balances}`);
+    await asyncForEach(balances, async coin => {
+      await cancelOrders(coin.ASSET + 'USDT');
+    });
+    const budget = await getBudget(balances);
+    console.log(`Budget: ${budget}`);
 
-  // 3. trade main allocations
-  await tradeMainAllocations(budget);
+    // 3. trade main allocations
+    await tradeMainAllocations(budget);
 
-  // 4. trade substitute coins
-  const remainingUSD = await getBalance('USDT');
-  if (remainingUSD > CONST.USD_TRADE_MIN) {
-    console.log('Filling remaining USD with substitues');
-    await tradeSubstitutes(budget, remainingUSD);
-  } else {
-    console.log(`Not enough remaining USD, $${remainingUSD}`);
-  }
-};
+    // 4. trade substitute coins
+    const remainingUSD = await getBalance('USDT');
+    if (remainingUSD > CONST.USD_TRADE_MIN) {
+      console.log('Testing remaining USD with substitues');
+      await tradeSubstitutes(budget, remainingUSD);
+    } else {
+      console.log(`No substitutes needed. Remaining USD: $${remainingUSD}`);
+    }
+  })
+  .start();
 
 /* 
   Returns an array of all current portfolio balances with
@@ -91,7 +94,7 @@ const tradeMainAllocations = async budget => {
     const bal = await getBalance(coin);
     const holdings = bal ? await exchangeValue(bal, coin, 'USDT') : 0;
     // Test trade criteria for order decision
-    const makeTrade = await tradeDecision(coin, 'USDT');
+    const makeTrade = await tradeDecision(coin + 'USDT');
 
     if (makeTrade) {
       // calculate amount of coin needed based on allocation
@@ -150,15 +153,15 @@ const liquidateSubstitutes = async () => {
   Returns true if in a bullish trend and trade should be made.
   More indicators will be included to strengthen the trade decision
 */
-const tradeDecision = async (coin, pair) =>
-  await indicators.testMACD(coin, pair);
+const tradeDecision = async symbol =>
+  (await indicators.testMACD(symbol)) && (await indicators.testRSI(symbol));
 
 /*
  Handles orders checking for type and sufficient balances if buy
 */
 const order = async (side, quantity, coin, pair) => {
   if (side === 'SELL') {
-    await sendOrder(side, quantity, coin, pair);
+    await sendOrder(side, quantity, coin + pair);
   } else {
     let enoughFunds = await checkFunds(quantity, coin, pair);
     if (!enoughFunds) {
@@ -175,9 +178,7 @@ const order = async (side, quantity, coin, pair) => {
         ? quantity
         : await exchangeValue(usdBal, pair, coin);
 
-      await sendOrder(side, total, coin, pair);
+      await sendOrder(side, total, coin + pair);
     }
   }
 };
-
-main();

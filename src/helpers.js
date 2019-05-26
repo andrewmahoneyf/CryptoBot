@@ -102,9 +102,9 @@ export const checkFunds = async (quantity, coin, pair) => {
 /*
   Checks books and trade history to determine limit price to set
 */
-export const getLimit = async (type, symbol, pair) => {
-  const book = await client.book(symbol + pair);
-  const trades = await client.aggTrades(symbol + pair);
+export const getLimit = async (type, symbol) => {
+  const book = await client.book(symbol);
+  const trades = await client.aggTrades(symbol);
   const avgTrade =
     trades.reduce((a, b) => a + parseFloat(b.price), 0) / trades.length;
   const bid = parseFloat(book.bids[0].price);
@@ -117,25 +117,24 @@ export const getLimit = async (type, symbol, pair) => {
   Finalize price and put in buy or sell orders
   Uses market orders for sells to make sure it triggers
 */
-export const sendOrder = async (side, quantity, coin, pair) => {
-  console.log('ORDER:', side, quantity, coin, pair);
+export const sendOrder = async (side, quantity, symbol) => {
+  console.log('ORDER:', side, quantity, symbol);
   if (side === 'BUY') {
-    const price = await getLimit(type, coin, pair);
+    const price = await getLimit(type, symbol);
     console.log(`Limit set at $${price}`);
-    // await client.order('LIMIT', side, coin + pair, quantity, price);
+    await client.order('LIMIT', side, symbol, quantity, price);
   } else {
-    // await client.order('MARKET, side, coin + pair, quantity);
+    await client.order('MARKET', side, symbol, quantity);
   }
 };
 
 /*
   Cancels all orders for a coin
 */
-export const cancelOrders = async (coin, pair) => {
-  const orders = await client.openOrders(coin + pair);
+export const cancelOrders = async symbol => {
+  const orders = await client.openOrders(symbol);
   console.log(`Canceling open orders: ${orders}`);
-
   await asyncForEach(orders, async order => {
-    await client.cancelOrder(coin + pair, order.orderId);
+    await client.cancelOrder(symbol, order.orderId);
   });
 };
