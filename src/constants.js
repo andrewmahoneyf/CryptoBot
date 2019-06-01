@@ -37,7 +37,7 @@ export const ALLOCATION = {
 export const ALLOCATION_KEYS = Object.keys(ALLOCATION);
 
 // Coins to be tested if you have remaining USD funds
-export const SUBSTITUTES = ['ENJ', 'BAT', 'BTT', 'QTUM', 'ICX', 'NEO', 'IOTA', 'THETA'];
+export const SUBSTITUTES = ['ATOM', 'ENJ', 'BAT', 'BTT', 'QTUM', 'ICX', 'NEO', 'IOTA', 'THETA'];
 
 // USDT, PAX, TUSD, USDC, USDS
 export const STABLE_PAIR = 'USDT';
@@ -57,13 +57,13 @@ export const MIN_BNB = 200;
   | | | | ┌────── day of the week (valid range: 0-7 or names of the days)
   * * * * *
 */
-// runs every 5 minutes in production. Anything less and the balance API wont update in time
-export const CRON_SCHEDULE = '*/5 * * * *';
-// runs every minute in dev for testing. Anything less might trigger request limits
-export const DEV_CRON_SCHEDULE = '* * * * *';
+// runs every 3 minutes in production
+export const CRON_SCHEDULE = '*/3 * * * *';
+// runs every 30 seconds in dev for testing
+export const DEV_CRON_SCHEDULE = '*/30 * * * * *';
 
 // Maximum percentage of total budget a subtitute can cover
-export const MAX_SUBSTITUTE_PERCENTAGE = 0.08;
+export const MAX_SUBSTITUTE_PERCENTAGE = 0.05;
 
 // Minimum value in USD to make a buy or sell order
 export const USD_TRADE_MIN = 50;

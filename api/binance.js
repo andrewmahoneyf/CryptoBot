@@ -1,5 +1,4 @@
 import 'dotenv/config';
-import moment from 'moment';
 import Binance from 'binance-api-node';
 
 /* Authenticated client, can make signed calls */
@@ -10,10 +9,6 @@ export const client = Binance({
 
 /* Public REST Endpoints */
 
-// Test connectivity to the API.
-export const ping = client.ping();
-// Test connectivity to the Rest API and get the current server time.
-export const time = client.time().then(res => console.log(moment(res).toString()));
 // Get the current exchange trading rules and symbol information.
 export const exchangeInfo = client.exchangeInfo();
 // Get the order book for a symbol.
@@ -35,17 +30,17 @@ export const allBookTickers = client.allBookTickers();
 
 /* Private REST Endpoints */
 
-// Creates a new order.
-export const limitOrder = (type, side, symbol, quantity, price) => client.order({
-  type,
+// Creates a limit order.
+export const limitOrder = (side, symbol, quantity, price) => client.order({
+  type: 'LIMIT',
   side,
   symbol,
   quantity,
   price,
 });
-// Creates a market sell order.
-export const marketSell = (type, side, symbol, quantity) => client.order({
-  type,
+// Creates a market order.
+export const marketOrder = (side, symbol, quantity) => client.order({
+  type: 'MARKET',
   side,
   symbol,
   quantity,
@@ -54,12 +49,6 @@ export const marketSell = (type, side, symbol, quantity) => client.order({
 export const getOrder = (symbol, orderId) => client.getOrder({ symbol, orderId });
 // Cancels an active order.
 export const cancelOrder = (symbol, orderId) => client.cancelOrder({ symbol, orderId });
-// Get all open orders.
-export const openOrders = () => client.openOrders();
-// Get all account orders on a symbol; active, canceled, or filled.
-export const allOrders = symbol => client.allOrders({ symbol });
-// Get current account information.
-export const accountInfo = client.accountInfo();
 // Get trades for the current authenticated account and symbol.
 export const myTrades = symbol => client.myTrades({ symbol });
 // Lookup symbol trades history.

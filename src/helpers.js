@@ -1,4 +1,4 @@
-import * as client from '../api/binance';
+import * as Binance from '../api/binance';
 import * as CONST from './constants';
 
 /*
@@ -15,7 +15,7 @@ export async function asyncForEach(array, callback) {
   Get price of symbol in pair value
 */
 const getPrice = async (symbol, pair) => {
-  const exchange = await client.avgPrice(symbol + pair);
+  const exchange = await Binance.avgPrice(symbol + pair);
   return parseFloat(exchange.price);
 };
 
@@ -33,7 +33,7 @@ export const exchangeValue = async (amount, symbol, pair) => {
   Get symbol close candle values for given interval
 */
 export const getCloses = async (symbol, interval, limit) => {
-  const result = await client.candles(symbol, interval, limit);
+  const result = await Binance.candles(symbol, interval, limit);
   return result.map(candle => parseFloat(candle.close));
 };
 
@@ -41,7 +41,7 @@ export const getCloses = async (symbol, interval, limit) => {
   Get symbol open candle values for given interval
 */
 export const getOpens = async (symbol, interval, limit) => {
-  const result = await client.candles(symbol, interval, limit);
+  const result = await Binance.candles(symbol, interval, limit);
   return result.map(candle => parseFloat(candle.open));
 };
 
@@ -49,58 +49,37 @@ export const getOpens = async (symbol, interval, limit) => {
   Get symbol volume candle values for given interval
 */
 export const getVolumes = async (symbol, interval, limit) => {
-  const result = await client.candles(symbol, interval, limit);
+  const result = await Binance.candles(symbol, interval, limit);
   return result.map(candle => parseFloat(candle.volume));
 };
 
 /*
-  Returns a formatted and filtered balance array
-  [ { ASSET: 'ETH', BAL: 2.5 }, ... ]
+  Returns the value of an assets balance in BTC
 */
-export const formatBalances = async () => {
-  const result = await client.accountInfo;
+export const balanceToBTC = async (balance, asset) => (asset === 'BTC' ? balance : exchangeValue(balance, asset, 'BTC'));
 
-  return result.balances
-    .filter(coin => coin.free > 0)
-    .map(coin => ({
-      ASSET: coin.asset,
-      BAL: parseFloat(coin.free),
-    }));
+/*
+  returns an object with the parsed balance options along with a total
+*/
+export const parseBalances = (asset) => {
+  const free = parseFloat(asset.free);
+  const locked = parseFloat(asset.locked);
+  const total = free + locked;
+  return {
+    free,
+    locked,
+    total,
+  };
 };
 
 /*
   Returns float value of current balance for received symbol
 */
 export const getBalance = async (symbol) => {
-  const balances = await formatBalances();
-  const bal = balances.filter(coin => coin.ASSET === symbol).map(coin => coin.BAL)[0];
-  // updating trade pairs balance to account for open orders
-  if (symbol === CONST.TRADE_PAIR) {
-    const openOrders = await client.openOrders();
-    const ordersSum = openOrders.length > 0
-      ? openOrders.reduce(
-        // eslint-disable-next-line max-len
-        (accumulator, currentOrder) => accumulator + parseFloat(currentOrder.price) * parseFloat(currentOrder.origQty),
-        0,
-      )
-      : 0;
-    return bal - ordersSum;
-  }
-  return bal;
-};
-
-/*
-  Returns float value of current balance for received symbol
-*/
-// eslint-disable-next-line max-len
-export const updateBalances = (balances, asset) => balances.filter(balance => balance.ASSET !== asset);
-
-/*
-  Returns float value of current available balance of the trade pair
-*/
-export const getTradePairBalance = async () => {
-  const balances = await formatBalances();
-  return balances.filter(coin => coin.ASSET === CONST.TRADE_PAIR).map(coin => coin.BAL)[0];
+  const result = await Binance.client.accountInfo();
+  const balance = result.balances.filter(coin => coin.asset === symbol)[0];
+  const { free, total } = parseBalances(balance);
+  return symbol === CONST.TRADE_PAIR ? free : total;
 };
 
 /*
@@ -155,7 +134,7 @@ export const getSubHoldings = balances => balances.filter(
   Returns info excahge info for the specific symbol
 */
 const getTickerInfo = async (symbol) => {
-  const info = await client.exchangeInfo;
+  const info = await Binance.exchangeInfo;
   return info.symbols.filter(i => i.symbol === symbol)[0];
 };
 
@@ -188,13 +167,18 @@ const formatPrice = (info, price) => {
 /*
   Checks books and trade history to determine limit price to set
 */
-export const getLimit = async (info) => {
-  const book = await client.book(info.symbol);
-  const trades = await client.aggTrades(info.symbol);
+export const getLimit = async (info, side) => {
+  const book = await Binance.book(info.symbol);
+  const trades = await Binance.aggTrades(info.symbol);
   const avgTrade = trades.reduce((a, b) => a + parseFloat(b.price), 0) / trades.length;
   const bid = parseFloat(book.bids[0].price);
   const ask = parseFloat(book.asks[0].price);
-  const price = avgTrade < ask ? avgTrade : bid;
+  let price;
+  if (side === 'BUY') {
+    price = avgTrade < ask ? avgTrade : bid;
+  } else {
+    price = avgTrade > bid ? avgTrade : ask;
+  }
   return formatPrice(info, price);
 };
 
@@ -207,15 +191,11 @@ export const sendOrder = async (side, total, coin) => {
   const info = await getTickerInfo(symbol);
   console.log('ORDER:', side, total, symbol);
   if (process.env.NODE_ENV === 'production') {
-    if (side === 'BUY') {
-      const price = await getLimit(info);
-      console.log(`Limit set at $${price}`);
-      const quantity = formatQuantity(info, total - (0.055 * total) / 100);
-      await client.limitOrder('LIMIT', side, symbol, quantity, price);
-    } else {
-      const quantity = formatQuantity(info, total);
-      console.log('quantity', quantity);
-      await client.marketSell('MARKET', side, symbol, quantity);
-    }
+    const price = await getLimit(info, side);
+    console.log(`Limit set at $${price}`);
+    const quantity = side === 'BUY'
+      ? formatQuantity(info, total - (0.055 * total) / 100)
+      : formatQuantity(info, total);
+    await Binance.limitOrder(side, symbol, quantity, price);
   }
 };

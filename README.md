@@ -63,8 +63,8 @@ This is an experimental terminal bot for auto trading on binance.com exchange
 - [x] Add environment variables for dev and production
 - [x] Handle BNB min holdings
 - [x] Allow custom trade or stable pairs
+- [x] Release V1
 - [ ] Integrate websockets and batch orders
-- [ ] Release V1
 - [ ] Handle upcoming margin additions to Binance
 - [ ] Add configurations for other technical indicators
 - [ ] Release V2
