@@ -8,16 +8,21 @@ This is an experimental terminal bot for auto trading on binance.com exchange
 
 1.  [Signup](https://www.binance.com/?ref=11635276) for Binance
 2.  Enable Two-factor Authentication
-3.  Go API Center, [Create New](https://www.binance.com/userCenter/createApi.html) Api Key
+3.  Go to API Center, [Create New](https://www.binance.com/userCenter/createApi.html) Api Key
 
         [✓] Read Info [✓] Enable Trading [] Enable Withdrawals
 
-4.  Create `.env` file and insert API and Secret Keys
+4.  Create a `.env` file and insert your API and Secret Keys
 
-    API_KEY=''
-    API_SECRET=''
+    API_KEY=...
 
-5.  Optional: alter bot presets such as allocation or MACD periods in `constants.js`
+    API_SECRET=...
+
+5.  Make sure to turn on using BNB for trade fees in your [account](https://www.binance.com/userCenter/myAccount.html) to save 25%. Option to hold BNB along with the min balance can be set in the `constants.js` file. More about trade fees and tiers can be found [here](https://www.binance.com/en/fee/schedule).
+
+6.  Optional: alter additional bot presets such as portfolio allocation or trade intervals in `constants.js`
+
+---
 
 ## Dependencies
 
@@ -27,8 +32,8 @@ This is an experimental terminal bot for auto trading on binance.com exchange
 
 ## Usage
 
-    yarn install
-    yarn start
+    yarn start:dev - starts the development server for testing. No real orders will be sent.
+    yarn start - creates a build and runs the production server. Warning: orders are now live.
 
 ## Run in a Docker container
 
@@ -44,26 +49,40 @@ This is an experimental terminal bot for auto trading on binance.com exchange
 
     Fork this Repo
     Commit your changes (git commit -m 'Add some feature')
-    Push to the changes (git push)
+    Push the changes (git push)
     Create a new Pull Request
 
 ## Roadmap
 
 - [x] Configure Binance API routes
 - [x] Set main structure with balance, budget, and allocation functionality
-- [x] Place buy and sell orders
+- [x] Handle logic for buy and sell orders
 - [x] Calculate MACD values
 - [x] Calculate RSI values
 - [x] Setup cron task
+- [x] Add environment variables for dev and production
+- [x] Handle BNB min holdings
+- [x] Allow custom trade or stable pairs
+- [ ] Integrate websockets and batch orders
+- [ ] Release V1
+- [ ] Handle upcoming margin additions to Binance
+- [ ] Add configurations for other technical indicators
+- [ ] Release V2
 - [ ] Get sentiment analysis from Twitter or StockTwits
-- [ ] Get major news alerts
 - [ ] Intergrate [coindar callendar](https://coindar.org) for upcoming news
 - [ ] Develop algo for selecting top 5 altcoins
-- [ ] Finish app tests
-- [ ] Release V1
-- [ ] Add configurations for other technical indicators
 - [ ] Integrate Docker
 - [ ] Release V2
+
+## Donate
+
+BTC: 18j1UsoK98sdkHtJg1aaRw1ZsdEDfGRCRh
+
+LTC: LXRhTEmydq7M8cw3W9stD2xH4f167USWHJ
+
+ETH: 0xfa00fb818a26bf8eda9726d80d6d8d6fbf4d97bd
+
+---
 
 ## License
 

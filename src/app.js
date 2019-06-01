@@ -1,7 +1,7 @@
-import cron from 'node-cron';
 import * as client from '../api/binance';
 import * as indicators from './indicators';
 import * as CONST from './constants';
+import scheduleJob from './job';
 import {
   asyncForEach,
   exchangeValue,
@@ -10,68 +10,69 @@ import {
   getBalance,
   checkAllocation,
   checkFunds,
-  cancelOrders
+  getTradePairUSDValue,
+  getSubHoldings,
+  updateBalances,
 } from './helpers';
 
 /*
   ==============   Main app method  ================
-  Checks API, gets balances, calculates total budget
-  Decides to  trade in and out of BTC, ETH, LTC
-  And then trades BTC holdings with ALtcoins
+  Checks API, gets balances, calculates total budget,
+  cancels outstanding orders, orders minimum BNB if set,
+  swing trades your main allocation, and then fills
+  remaining budget with substitutes if bullish
 */
-cron
-  .schedule(CONST.CRON_SCHEDULE, async () => {
-    // 1. test connectivity to the API then log server time
-    (await client.ping) && client.time;
+scheduleJob(async () => {
+  // 1. test connectivity to the API then log server time
+  await client.ping;
+  await client.time;
+  // 2. cancel any outstanding orders
+  await cancelOrders();
+  // 3. verify current funds
+  const balances = await getBalances();
+  // const clean = await client.clean;
+  console.log('Balances:', balances);
+  // console.log('Clean:', clean);
+  const budget = await getBudget(balances);
+  console.log('Budget:', budget);
 
-    // 2. verify current funds
-    const balances = await getBalances();
-    console.log(`Balances: ${balances}`);
-    await asyncForEach(balances, async coin => {
-      await cancelOrders(coin.ASSET + 'USDT');
-    });
-    const budget = await getBudget(balances);
-    console.log(`Budget: ${budget}`);
+  if (budget.USD > CONST.USD_TRADE_MIN) {
+    // 3. check if substitute positions should be sold
+    const updatedBalances = await checkOnSubs(balances);
+    // 4. check BNB balance if min holding set
+    if (CONST.HOLD_BNB) await fillMinBNB();
+    // 5. trade main allocations
+    await tradeMainAllocations(budget, updatedBalances);
+    // 6. trade substitute coins
+    await tradeSubs(budget);
+  } else {
+    console.log('Need more funds in your account');
+  }
+});
 
-    // 3. trade main allocations
-    await tradeMainAllocations(budget);
-
-    // 4. trade substitute coins
-    const remainingUSD = await getBalance('USDT');
-    if (remainingUSD > CONST.USD_TRADE_MIN) {
-      console.log('Testing remaining USD with substitues');
-      await tradeSubstitutes(budget, remainingUSD);
-    } else {
-      console.log(`No substitutes needed. Remaining USD: $${remainingUSD}`);
-    }
-  })
-  .start();
-
-/* 
+/*
   Returns an array of all current portfolio balances with
   a minimum value of over $10 and provides their value in BTC
-  [ { asset: 'ETH', bal: 2.5, btc: .005 }, ... ] 
+  [ { ASSET: 'ETH', BAL: 2.5, BTC: .005 }, ... ]
 */
 const getBalances = async () => {
-  const balances = await formatBalances();
-  // Add BTC value key and filter minimum $10 valeu
-  const minumim = await exchangeValue(10, 'USDT', 'BTC');
-  await asyncForEach(balances, async coin => {
-    coin.BTC =
-      coin.ASSET === 'BTC'
-        ? coin.BAL
-        : await exchangeValue(coin.BAL, coin.ASSET, 'BTC');
+  const formatedBalances = await formatBalances();
+  // add BTC value key and filter minimum $10 value
+  const minumim = await exchangeValue(10, CONST.STABLE_PAIR, 'BTC');
+  await asyncForEach(formatedBalances, async (coin) => {
+    // eslint-disable-next-line no-param-reassign
+    coin.BTC = coin.ASSET === 'BTC' ? coin.BAL : await exchangeValue(coin.BAL, coin.ASSET, 'BTC');
   });
-  return balances.filter(coin => coin.BTC > minumim);
+  return formatedBalances.filter(coin => coin.BTC > minumim);
 };
 
-/* 
-  Receives array of balances from getBalances()  
+/*
+  Receives array of balances from getBalances()
   returns total portfolio value in object { BTC: '', USD: '' }
 */
-const getBudget = async balances => {
+const getBudget = async (balances) => {
   let totalBTC = 0.0;
-  await asyncForEach(balances, async coin => {
+  await asyncForEach(balances, async (coin) => {
     if (coin.ASSET === 'BTC') {
       totalBTC += coin.BAL;
     } else {
@@ -80,105 +81,178 @@ const getBudget = async balances => {
   });
   return {
     BTC: totalBTC,
-    USD: await exchangeValue(totalBTC, 'BTC', 'USDT')
+    USD: await exchangeValue(totalBTC, 'BTC', CONST.STABLE_PAIR),
   };
 };
 
 /*
-  Fills fixed allocation percentages if bullish and max sells coin if not
+  Cancels all outstanding orders
 */
-const tradeMainAllocations = async budget => {
-  const coins = Object.keys(CONST.ALLOCATION);
-  await asyncForEach(coins, async coin => {
-    // Check current value of coin if holding
-    const bal = await getBalance(coin);
-    const holdings = bal ? await exchangeValue(bal, coin, 'USDT') : 0;
-    // Test trade criteria for order decision
-    const makeTrade = await tradeDecision(coin + 'USDT');
+const cancelOrders = async () => {
+  const orders = await client.openOrders();
+  await asyncForEach(orders, async (order) => {
+    await client.cancelOrder(order.symbol, order.orderId);
+  });
+};
 
-    if (makeTrade) {
+/*
+  Check any substitute holdings to see if they should be sold
+*/
+const checkOnSubs = async (balances) => {
+  const subHoldings = getSubHoldings(balances);
+  let updatedBalances = balances;
+  let changed = false;
+  await asyncForEach(subHoldings, async (balance) => {
+    const coin = balance.ASSET;
+    if (!(await tradeDecision(coin))) {
+      await sendOrder('SELL', await getBalance(coin), coin);
+      updatedBalances = updateBalances(updatedBalances, coin);
+      changed = true;
+    }
+  });
+  if (changed) {
+    console.log('Updated balances:', updatedBalances);
+  }
+  return updatedBalances;
+};
+
+/*
+  Fills minimum balance set for BNB to save on trade fees
+*/
+const fillMinBNB = async () => {
+  const amountShort = Math.ceil(CONST.MIN_BNB - (await getBalance('BNB')));
+  if (amountShort > 0) {
+    console.log(`Short ${amountShort} BNB from set minimum, attempting buy order`);
+    await verifyBuy(amountShort, 'BNB');
+  }
+};
+
+/*
+  Fills fixed allocation percentages if bullish and sells coin holdings if not
+*/
+const tradeMainAllocations = async (budget, balances) => {
+  await asyncForEach(CONST.ALLOCATION_KEYS, async (coin) => {
+    // check current value of coin if holding
+    const bal = await getBalance(coin);
+    const holdings = bal ? await exchangeValue(bal, coin, CONST.STABLE_PAIR) : 0;
+
+    // test trade criteria for order decision
+    if (await tradeDecision(coin)) {
       // calculate amount of coin needed based on allocation
       const diff = await checkAllocation(coin, holdings, budget);
-      // Make trade if allocation is off by +-$50
+      // make trade if allocation is off by +-$50
       if (Math.abs(diff.USD) > CONST.USD_TRADE_MIN) {
-        diff.USD > 0 && (await order('BUY', diff.QUANTITY, coin, 'USDT'));
-        diff.USD < 0 && (await order('SELL', diff.QUANTITY, coin, 'USDT'));
+        if (diff.USD > 0) await verifyBuy(diff.QUANTITY, coin, balances);
+        else await sendOrder('SELL', diff.QUANTITY, coin);
       }
-    } else {
-      // sell total current balance if negative
-      if (holdings > CONST.USD_TRADE_MIN)
-        await order('SELL', bal, coin, 'USDT');
+    } else if (holdings > CONST.USD_TRADE_MIN) {
+      // sell total current balance if bearish
+      if (coin !== 'BNB' || !CONST.HOLD_BNB) await sendOrder('SELL', bal, coin);
     }
   });
 };
 
 /*
-  Places orders with remaining USD for substitute coins if bullish
+  Places orders with remaining trade pair for substitute coins if bullish
 */
-const tradeSubstitutes = async (budget, remainingUSD) => {
-  // set max order USD value for each substitute
+const tradeSubs = async (budget) => {
+  // get remaining trade pair balance in USD
+  let tradePairValue = await getTradePairUSDValue();
+
+  // set max USD order value for each substitute
   const maxOrder = budget.USD * CONST.MAX_SUBSTITUTE_PERCENTAGE;
-  await asyncForEach(CONST.SUBSTITUTES, async coin => {
-    // continue trading as long as you have enough USD
-    if (remainingUSD > CONST.USD_TRADE_MIN) {
-      const makeTrade = await tradeDecision(coin, 'USDT');
-      if (makeTrade) {
-        const total =
-          remainingUSD > maxOrder
-            ? await exchangeValue(maxOrder, 'USDT', coin)
-            : await exchangeValue(remainingUSD, 'USDT', coin);
 
-        await order('BUY', total, coin, 'USDT');
-        remainingUSD -= maxOrder;
+  let index = 0;
+  // continue trading as long as you have enough excess value in USD
+  (async function loop() {
+    if (
+      tradePairValue > CONST.USD_TRADE_MIN
+      && maxOrder > CONST.USD_TRADE_MIN
+      && CONST.SUBSTITUTES[index]
+    ) {
+      const coin = CONST.SUBSTITUTES[index];
+      const makeTrade = await tradeDecision(coin);
+      if (makeTrade) {
+        const total = tradePairValue > maxOrder
+          ? await exchangeValue(maxOrder, CONST.STABLE_PAIR, coin)
+          : await exchangeValue(tradePairValue, CONST.STABLE_PAIR, coin);
+
+        await sendOrder('BUY', total, coin);
+        tradePairValue -= maxOrder;
       }
+      index += 1;
+      loop();
     }
-  });
+  }());
 };
 
 /*
-  Sells coin holdings into USDT if not included in main allocation
+  Sells coin holdings into your trade pair if not included in main allocation
+  Returns true if enough funds are now met
 */
-const liquidateSubstitutes = async () => {
-  const balances = await getBalances();
-  const mainCrypto = Object.keys(CONST.ALLOCATION);
-  const alts = balances.filter(balance => !mainCrypto.includes(balance.ASSET));
+const liquidateSubs = async (quantity, coin, balances) => {
+  console.log(`Need more ${CONST.TRADE_PAIR} funds, liquidating substitutes`);
+  const subHoldings = getSubHoldings(balances);
 
-  await asyncForEach(
-    alts,
-    async alt => await order('SELL', alt.BAL, alt.ASSET, 'USDT')
+  await asyncForEach(subHoldings, async asset => sendOrder('SELL', asset.BAL, asset.ASSET));
+  return checkFunds(quantity, coin);
+};
+
+/*
+  Sells lower allocation coins into your trade pair until enough funds are available
+  Returns true if enough funds are now met
+*/
+const liquidateLowAllocations = async (quantity, coin, balances) => {
+  console.log(`Still need more ${CONST.TRADE_PAIR} funds, liquidating lower allocations`);
+  const allocation = CONST.ALLOCATION[coin];
+  const lowBalances = balances.filter(
+    balance => CONST.ALLOCATION[balance.ASSET] < allocation && balance.ASSET !== 'BNB',
   );
+
+  let index = 0;
+  let enoughFunds = false;
+  (async function loop() {
+    if (!enoughFunds && lowBalances[index]) {
+      const asset = lowBalances[index];
+      await sendOrder('SELL', asset.BAL, asset.ASSET);
+      index += 1;
+      enoughFunds = await checkFunds(quantity, coin);
+      loop();
+    }
+  }());
+  return checkFunds(quantity, coin);
 };
 
 /*
   Returns true if in a bullish trend and trade should be made.
-  More indicators will be included to strengthen the trade decision
+  NOTE: More indicators may be included to strengthen the trade decision
 */
-const tradeDecision = async symbol =>
-  (await indicators.testMACD(symbol)) && (await indicators.testRSI(symbol));
+const tradeDecision = async (coin) => {
+  const symbol = coin + CONST.TRADE_PAIR;
+  return (await indicators.testMACD(symbol)) && indicators.testRSI(symbol);
+};
 
 /*
- Handles orders checking for type and sufficient balances if buy
+ Handles sufficient balance verification for buy orders
 */
-const order = async (side, quantity, coin, pair) => {
-  if (side === 'SELL') {
-    await sendOrder(side, quantity, coin + pair);
-  } else {
-    let enoughFunds = await checkFunds(quantity, coin, pair);
-    if (!enoughFunds) {
-      // sell any substitute coins and retry
-      console.log(`Need more ${pair} funds, liquidating substitutes`);
-      await liquidateSubstitutes();
-      enoughFunds = await checkFunds(quantity, coin, pair);
-    }
-    // set quantity to max bal if still not enough funds
-    const usdBal = await getBalance(pair);
-    if (usdBal > CONST.USD_TRADE_MIN) {
-      console.log('Min trade amount met, sending buy order');
-      const total = enoughFunds
-        ? quantity
-        : await exchangeValue(usdBal, pair, coin);
+const verifyBuy = async (quantity, coin, balances) => {
+  let enoughFunds = await checkFunds(quantity, coin);
+  if (!enoughFunds) {
+    // sell any substitute coins and retry
+    enoughFunds = await liquidateSubs(quantity, coin, balances);
+  }
+  if (!enoughFunds) {
+    // sell low allocation coins until you have enough
+    enoughFunds = await liquidateLowAllocations(quantity, coin, balances);
+  }
+  // set quantity to max bal if still not enough funds
+  if ((await getTradePairUSDValue()) > CONST.USD_TRADE_MIN) {
+    console.log('Min trade amount met, sending buy order');
+    const pairBal = await getBalance(CONST.TRADE_PAIR);
+    const total = enoughFunds ? quantity : await exchangeValue(pairBal, CONST.TRADE_PAIR, coin);
 
-      await sendOrder(side, total, coin + pair);
-    }
+    await sendOrder('BUY', total, coin);
+  } else {
+    console.log(`Not enough ${CONST.TRADE_PAIR} funds, skipping order`);
   }
 };
