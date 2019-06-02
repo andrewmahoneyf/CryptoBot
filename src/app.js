@@ -157,9 +157,16 @@ const tradeMainAllocations = async (budget) => {
           await sendOrder('SELL', diff.QUANTITY, coin);
         }
       }
+    } else if (CONST.HOLD_BNB && coin === 'BNB') {
+      // sell any extra BNB if allocation is above min
+      const diff = bal - CONST.MIN_BNB;
+      const value = await exchangeValue(diff, 'BNB', CONST.STABLE_PAIR);
+      if (diff > 0 && value > CONST.USD_TRADE_MIN) {
+        await sendOrder('SELL', diff, coin);
+      }
     } else if (holdings > CONST.USD_TRADE_MIN) {
       // sell total current balance if bearish
-      if (coin !== 'BNB' || !CONST.HOLD_BNB) await sendOrder('SELL', bal, coin);
+      await sendOrder('SELL', bal, coin);
     }
   });
 };

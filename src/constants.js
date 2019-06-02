@@ -32,7 +32,7 @@ export const TRADE_PAIR = 'USDT';
 // Set to take advantage of lower trade fees. If true, BNB must be included in your allocation above
 // VIP levels: 50, 200, 1000, 2000, 3500, 6000, 9000, 11000 https://www.binance.com/en/fee/schedule
 export const HOLD_BNB = true;
-export const MIN_BNB = 200;
+export const MIN_BNB = 50;
 
 /*
   ┌────────────── minute (Valid range: 0-59)
@@ -57,9 +57,9 @@ export const USD_TRADE_MIN = 50;
 export const CHART_INTERVALS = ['1h'];
 
 export const MACD_INPUTS = {
-  fastPeriod: 8,
-  slowPeriod: 13,
-  signalPeriod: 5,
+  fastPeriod: 13,
+  slowPeriod: 21,
+  signalPeriod: 8,
   SimpleMAOscillator: false,
   SimpleMASignal: false,
 };

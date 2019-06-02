@@ -14,7 +14,7 @@ export const exchangeInfo = client.exchangeInfo();
 // Get the order book for a symbol.
 export const book = (symbol, limit = 5) => client.book({ symbol, limit });
 // Retrieves Candlestick for a symbol. Candlesticks are uniquely identified by their open time.
-export const candles = (symbol, interval = '1h', limit = 25) => client.candles({ symbol, interval, limit });
+export const candles = (symbol, interval = '1h', limit = 50) => client.candles({ symbol, interval, limit });
 // Get compressed, aggregate trades that filled at the time and price.
 export const aggTrades = (symbol, limit = 20) => client.aggTrades({ symbol, limit });
 // Get recent trades of a symbol.
@@ -23,10 +23,6 @@ export const trades = (symbol, limit = 20) => client.trades({ symbol, limit });
 export const dailyStats = symbol => client.dailyStats({ symbol });
 // Current average price for a symbol.
 export const avgPrice = symbol => client.avgPrice({ symbol });
-// Latest price for all symbols.
-export const prices = client.prices();
-// Best price/qty on the order book for all symbols.
-export const allBookTickers = client.allBookTickers();
 
 /* Private REST Endpoints */
 

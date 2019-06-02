@@ -18,9 +18,10 @@ This is an experimental terminal bot for auto trading on binance.com exchange
 
     API_SECRET=...
 
-5.  Make sure to turn on using BNB for trade fees in your [account](https://www.binance.com/userCenter/myAccount.html) to save 25%. Option to hold BNB along with the min balance can be set in the `constants.js` file. More about trade fees and tiers can be found [here](https://www.binance.com/en/fee/schedule).
+5.  If holding BNB, turn on using BNB for trade fees in your [account](https://www.binance.com/userCenter/myAccount.html) to save 25%. Option to hold BNB along with the min balance can be set in the `constants.js` file. More about trade fees and tiers can be found [here](https://www.binance.com/en/fee/schedule).
 
 6.  Optional: alter additional bot presets such as portfolio allocation or trade intervals in `constants.js`
+7.  Make sure to turn off your computers energy saving settings so that your terminal process won't pause if your computer goes to sleep. Alternatively, you can prepend `caffeinate` to your start command.
 
 ---
 
@@ -69,7 +70,7 @@ This is an experimental terminal bot for auto trading on binance.com exchange
 - [ ] Add configurations for other technical indicators
 - [ ] Release V2
 - [ ] Get sentiment analysis from Twitter or StockTwits
-- [ ] Intergrate [coindar callendar](https://coindar.org) for upcoming news
+- [ ] Integrate [coindar calendar](https://coindar.org) for upcoming news
 - [ ] Develop algo for selecting top 5 altcoins
 - [ ] Integrate Docker
 - [ ] Release V2
