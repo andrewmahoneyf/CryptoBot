@@ -48,7 +48,7 @@ scheduleJob(async () => {
     // 5. trade main allocations
     await tradeMainAllocations(budget);
     // 6. trade substitute coins
-    await tradeSubs(budget);
+    if (CONST.TRADE_SUBS) await tradeSubs(budget);
   } else {
     console.log('Need more funds in your account');
   }
@@ -149,8 +149,13 @@ const tradeMainAllocations = async (budget) => {
       const diff = await checkAllocation(coin, holdings, budget);
       // make trade if allocation is off by +-$50
       if (Math.abs(diff.USD) > CONST.USD_TRADE_MIN) {
-        if (diff.USD > 0) await verifyBuy(diff.QUANTITY, coin);
-        else await sendOrder('SELL', diff.QUANTITY, coin);
+        if (diff.USD > 0) {
+          console.log(`${coin} preferred allocation not met, attempting order`);
+          await verifyBuy(diff.QUANTITY, coin);
+        } else {
+          console.log(`${coin} allocation is too high, selling difference`);
+          await sendOrder('SELL', diff.QUANTITY, coin);
+        }
       }
     } else if (holdings > CONST.USD_TRADE_MIN) {
       // sell total current balance if bearish
@@ -200,38 +205,14 @@ const tradeSubs = async (budget) => {
   Returns true if enough funds are now met
 */
 const liquidateSubs = async (quantity, coin) => {
-  console.log(`Need more ${CONST.TRADE_PAIR} funds, liquidating substitutes`);
   const balances = await getBalances();
   const subHoldings = getSubHoldings(balances);
-
-  await asyncForEach(subHoldings, async asset => sendOrder('SELL', asset.BAL, asset.ASSET));
-  return checkFunds(quantity, coin);
-};
-
-/*
-  Sells lower allocation coins into your trade pair until enough funds are available
-  Returns true if enough funds are now met
-*/
-const liquidateLowAllocations = async (quantity, coin) => {
-  console.log(`Still need more ${CONST.TRADE_PAIR} funds, liquidating lower allocations`);
-  const balances = await getBalances();
-  const allocation = CONST.ALLOCATION[coin];
-  const lowBalances = balances.filter(
-    balance => CONST.ALLOCATION[balance.ASSET] < allocation && balance.ASSET !== 'BNB',
-  );
-
-  let index = 0;
-  let enoughFunds = false;
-  (async function loop() {
-    if (!enoughFunds && lowBalances[index]) {
-      const asset = lowBalances[index];
-      await sendOrder('SELL', asset.BAL, asset.ASSET);
-      index += 1;
-      enoughFunds = await checkFunds(quantity, coin);
-      loop();
-    }
-  }());
-  return checkFunds(quantity, coin);
+  if (subHoldings.length > 0) {
+    console.log(`Need more ${CONST.TRADE_PAIR} funds, liquidating substitutes`);
+    await asyncForEach(subHoldings, async asset => sendOrder('SELL', asset.BAL, asset.ASSET));
+    return checkFunds(quantity, coin);
+  }
+  return false;
 };
 
 /*
@@ -252,16 +233,12 @@ const verifyBuy = async (quantity, coin) => {
     // sell any substitute coins and retry
     enoughFunds = await liquidateSubs(quantity, coin);
   }
-  if (!enoughFunds) {
-    // sell low allocation coins until you have enough
-    enoughFunds = await liquidateLowAllocations(quantity, coin);
-  }
-  // set quantity to max bal if still not enough funds
-  if ((await getTradePairUSDValue()) > CONST.USD_TRADE_MIN) {
-    console.log('Min trade amount met, sending buy order');
+  if ((await getTradePairUSDValue()) > CONST.USD_TRADE_MIN || coin === 'BNB') {
+    // set quantity to max bal if still not enough funds
     const total = enoughFunds
       ? quantity
       : await exchangeValue(await getBalance(CONST.TRADE_PAIR), CONST.TRADE_PAIR, coin);
+
     await sendOrder('BUY', total, coin);
   } else {
     console.log(`Not enough ${CONST.TRADE_PAIR} funds, skipping order`);

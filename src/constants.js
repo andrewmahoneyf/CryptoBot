@@ -4,40 +4,25 @@
   Please note that all coins need a pair with the STABLE and TRADE_PAIR currencies set below.
   ========================================
 */
-// export const ALLOCATION = {
-//   BTC: 0.25,
-//   LTC: 0.15,
-//   BNB: 0.1,
-//   ETH: 0.1,
-//   ADA: 0.05,
-//   EOS: 0.05,
-//   ONT: 0.05,
-//   TRX: 0.05,
-//   NANO: 0.05,
-//   BCHABC: 0.05,
-//   XLM: 0.05,
-//   OMG: 0.05,
-//   VET: 0.05,
-// };
 
 export const ALLOCATION = {
   LTC: 0.2,
-  BNB: 0.15,
+  BNB: 0.2,
   VET: 0.1,
-  ADA: 0.08,
-  EOS: 0.08,
-  XLM: 0.07,
-  OMG: 0.07,
-  NANO: 0.07,
-  BCHABC: 0.06,
-  ONT: 0.06,
+  ADA: 0.1,
+  EOS: 0.1,
+  XLM: 0.06,
+  OMG: 0.06,
+  NANO: 0.06,
   TRX: 0.06,
+  ONT: 0.06,
 };
 
 export const ALLOCATION_KEYS = Object.keys(ALLOCATION);
 
 // Coins to be tested if you have remaining USD funds
-export const SUBSTITUTES = ['ATOM', 'ENJ', 'BAT', 'BTT', 'QTUM', 'ICX', 'NEO', 'IOTA', 'THETA'];
+export const TRADE_SUBS = false;
+export const SUBSTITUTES = ['ENJ', 'BAT', 'BTT', 'QTUM', 'ICX', 'NEO', 'IOTA', 'THETA'];
 
 // USDT, PAX, TUSD, USDC, USDS
 export const STABLE_PAIR = 'USDT';
@@ -69,7 +54,7 @@ export const MAX_SUBSTITUTE_PERCENTAGE = 0.05;
 export const USD_TRADE_MIN = 50;
 
 // 1m, 3m, 5m, 15m, 30m, 1h, 2h, 4h, 6h, 8h, 12h, 1d, 3d, 1w, 1M
-export const CHART_INTERVALS = ['15m', '1h'];
+export const CHART_INTERVALS = ['1h'];
 
 export const MACD_INPUTS = {
   fastPeriod: 8,
