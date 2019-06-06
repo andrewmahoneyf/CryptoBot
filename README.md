@@ -33,12 +33,31 @@ This is an experimental terminal bot for auto trading on binance.com exchange
 
 ## Usage
 
-    yarn start:dev - starts the development server for testing. No real orders will be sent.
-    yarn start - creates a build and runs the production server. Warning: orders are now live.
+    yarn start:dev - (starts the development server for testing. No real orders will be sent.)
+
+    yarn start - (creates a build and runs the production server. Warning: orders are now live.)
 
 ## Run in a Docker container
 
-    Coming soon
+[Install Docker](https://docs.docker.com/install/)
+
+    # Build the image
+    $ docker build -t bot-img .
+
+    # Run the image
+    $ docker run -d -t -i --name crypto-bot bot-img
+
+    # Print bots output logs
+    $ docker logs crypto-bot
+
+    # If you want to enter the container
+    $ docker attach crypto-bot
+
+    # If you want to stop the container
+    $ docker stop crypto-bot
+
+    # If you want to clean unused containers/images
+    $ docker system prune
 
 ## DISCLAIMER
 
@@ -49,8 +68,7 @@ This is an experimental terminal bot for auto trading on binance.com exchange
 ## Contributing
 
     Fork this Repo
-    Commit your changes (git commit -m 'Add some feature')
-    Push the changes (git push)
+    Commit and push your changes
     Create a new Pull Request
 
 ## Roadmap
@@ -65,6 +83,8 @@ This is an experimental terminal bot for auto trading on binance.com exchange
 - [x] Handle BNB min holdings
 - [x] Allow custom trade or stable pairs
 - [x] Release V1
+- [x] Set-up Docker
+- [x] Clean-up log outputs with tables and ora spinners
 - [ ] Integrate websockets and batch orders
 - [ ] Handle upcoming margin additions to Binance
 - [ ] Add configurations for other technical indicators
@@ -72,8 +92,7 @@ This is an experimental terminal bot for auto trading on binance.com exchange
 - [ ] Get sentiment analysis from Twitter or StockTwits
 - [ ] Integrate [coindar calendar](https://coindar.org) for upcoming news
 - [ ] Develop algo for selecting top 5 altcoins
-- [ ] Integrate Docker
-- [ ] Release V2
+- [ ] Release V3
 
 ## Donate
 

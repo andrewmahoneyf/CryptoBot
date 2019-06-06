@@ -1,3 +1,4 @@
+import ora from 'ora';
 import { MACD } from 'technicalindicators';
 import * as CONST from '../constants';
 import { getCloses, asyncForEach } from '../helpers';
@@ -21,15 +22,16 @@ const getMACD = async (symbol, interval) => {
 export default async (symbol) => {
   let allMACDsPass = true;
   await asyncForEach(CONST.CHART_INTERVALS, async (interval) => {
+    const spinner = ora(`${symbol} MACD`).start();
     const macd = await getMACD(symbol, interval);
     const current = macd.pop();
-    if (['1m', '3m', '5m', '15m'].includes(interval)) {
-      const recent = macd.slice(macd.length - 2);
-      allMACDsPass = !recent.every(m => m.histogram < 0);
-    } else if (current.histogram < 0) {
+    const res = `${symbol} ${interval} MACD: ${current.histogram}`;
+    if (current.histogram < 0) {
       allMACDsPass = false;
+      spinner.fail(res);
+    } else {
+      spinner.succeed(res);
     }
-    console.log('MACD', symbol, interval, current.histogram);
   });
   return allMACDsPass;
 };

@@ -1,0 +1,14 @@
+# dependencies
+/node_modules
+
+# production
+/build
+
+# misc
+.DS_Store
+yarn-debug.log*
+yarn-error.log*
+.git
+README.md
+.gitignore
+.eslintrc

@@ -8,9 +8,9 @@
     "cron": "^1.7.1",
     "dotenv": "^7.0.0",
     "moment": "^2.24.0",
-    "node-binance-api": "^0.9.2",
     "node-cron": "^2.0.3",
-    "technicalindicators": "^2.0.7"
+    "ora": "^3.4.0",
+    "technicalindicators": "^2.0.8"
   },
   "devDependencies": {
     "@babel/cli": "^7.4.4",

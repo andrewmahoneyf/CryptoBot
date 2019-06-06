@@ -7,22 +7,28 @@
 
 export const ALLOCATION = {
   LTC: 0.2,
-  BNB: 0.2,
-  VET: 0.1,
+  BNB: 0.1,
   ADA: 0.1,
   EOS: 0.1,
-  XLM: 0.06,
-  OMG: 0.06,
-  NANO: 0.06,
-  TRX: 0.06,
-  ONT: 0.06,
+  VET: 0.1,
+  ONE: 0.1,
+  XLM: 0.05,
+  OMG: 0.05,
+  NANO: 0.05,
+  // TRX: 0.05,
+  ONT: 0.05,
+  ENJ: 0.05,
+  XRP: 0.05,
+  BTT: 0.05,
 };
 
 export const ALLOCATION_KEYS = Object.keys(ALLOCATION);
 
 // Coins to be tested if you have remaining USD funds
 export const TRADE_SUBS = false;
-export const SUBSTITUTES = ['ENJ', 'BAT', 'BTT', 'QTUM', 'ICX', 'NEO', 'IOTA', 'THETA'];
+export const SUBSTITUTES = ['BAT', 'BTT', 'QTUM', 'ICX', 'NEO', 'IOTA', 'THETA'];
+// Maximum percentage of total budget a subtitute can cover
+export const MAX_SUBSTITUTE_PERCENTAGE = 0.05;
 
 // USDT, PAX, TUSD, USDC, USDS
 export const STABLE_PAIR = 'USDT';
@@ -33,6 +39,12 @@ export const TRADE_PAIR = 'USDT';
 // VIP levels: 50, 200, 1000, 2000, 3500, 6000, 9000, 11000 https://www.binance.com/en/fee/schedule
 export const HOLD_BNB = true;
 export const MIN_BNB = 50;
+
+// The current trade free you pay on Binance. Used to calculate max buy order
+export const TRADE_FEE = 0.0675;
+
+// Set to true if you wish to gradually sell profits to maintain the allocation percentages
+export const TAKE_PROFITS = true;
 
 /*
   ┌────────────── minute (Valid range: 0-59)
@@ -47,14 +59,11 @@ export const CRON_SCHEDULE = '*/3 * * * *';
 // runs every 30 seconds in dev for testing
 export const DEV_CRON_SCHEDULE = '*/30 * * * * *';
 
-// Maximum percentage of total budget a subtitute can cover
-export const MAX_SUBSTITUTE_PERCENTAGE = 0.05;
-
 // Minimum value in USD to make a buy or sell order
 export const USD_TRADE_MIN = 50;
 
 // 1m, 3m, 5m, 15m, 30m, 1h, 2h, 4h, 6h, 8h, 12h, 1d, 3d, 1w, 1M
-export const CHART_INTERVALS = ['1h'];
+export const CHART_INTERVALS = ['2h'];
 
 export const MACD_INPUTS = {
   fastPeriod: 13,

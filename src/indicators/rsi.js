@@ -1,3 +1,4 @@
+import ora from 'ora';
 import { RSI } from 'technicalindicators';
 import * as CONST from '../constants';
 import { getCloses, asyncForEach } from '../helpers';
@@ -21,11 +22,15 @@ const getRSI = async (symbol, interval) => {
 export default async (symbol) => {
   let allRSIsPass = true;
   await asyncForEach(CONST.CHART_INTERVALS, async (interval) => {
+    const spinner = ora(`${symbol} RSI`).start();
     const current = await getRSI(symbol, interval);
+    const res = `${symbol} ${interval} RSI: ${current}`;
     if (current > 85) {
       allRSIsPass = false;
+      spinner.fail(res);
+    } else {
+      spinner.succeed(res);
     }
-    console.log('RSI', symbol, interval, current);
   });
   return allRSIsPass;
 };
