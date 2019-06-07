@@ -15,18 +15,27 @@ export const ALLOCATION = {
   XLM: 0.05,
   OMG: 0.05,
   NANO: 0.05,
-  // TRX: 0.05,
-  ONT: 0.05,
-  ENJ: 0.05,
-  XRP: 0.05,
-  BTT: 0.05,
 };
 
 export const ALLOCATION_KEYS = Object.keys(ALLOCATION);
 
-// Coins to be tested if you have remaining USD funds
-export const TRADE_SUBS = false;
-export const SUBSTITUTES = ['BAT', 'BTT', 'QTUM', 'ICX', 'NEO', 'IOTA', 'THETA'];
+// Coins to be tested if you have remaining allocation or USD funds
+export const TRADE_SUBS = true;
+export const SUBSTITUTES = [
+  'BTC',
+  'ETH',
+  'XRP',
+  'TRX',
+  'ONT',
+  'ENJ',
+  'BTT',
+  'BAT',
+  'QTUM',
+  'ICX',
+  'NEO',
+  'IOTA',
+  'THETA',
+];
 // Maximum percentage of total budget a subtitute can cover
 export const MAX_SUBSTITUTE_PERCENTAGE = 0.05;
 
@@ -60,7 +69,7 @@ export const CRON_SCHEDULE = '*/3 * * * *';
 export const DEV_CRON_SCHEDULE = '*/30 * * * * *';
 
 // Minimum value in USD to make a buy or sell order
-export const USD_TRADE_MIN = 50;
+export const USD_TRADE_MIN = 100;
 
 // 1m, 3m, 5m, 15m, 30m, 1h, 2h, 4h, 6h, 8h, 12h, 1d, 3d, 1w, 1M
 export const CHART_INTERVALS = ['2h'];

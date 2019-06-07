@@ -4,11 +4,13 @@ import * as Binance from '../api/binance';
 import * as indicators from './indicators';
 import * as CONST from './constants';
 import scheduleJob from './job';
+import recommender from './recommender';
 import {
   asyncForEach,
   exchangeValue,
   balanceToBTC,
   parseBalances,
+  cancelOrders,
   sendOrder,
   getBalance,
   checkAllocation,
@@ -45,13 +47,13 @@ scheduleJob(async () => {
   console.table(budget);
 
   if (budget.USD > CONST.USD_TRADE_MIN) {
-    // 3. check if substitute positions should be sold
+    // 4. check if substitute positions should be sold
     await checkOnSubs(balances);
-    // 4. check BNB balance if min holding set
+    // 5. check BNB balance if min holding set
     if (CONST.HOLD_BNB) await fillMinBNB();
-    // 5. trade main allocations
+    // 6. trade main allocations
     await tradeMainAllocations(budget);
-    // 6. trade substitute coins
+    // 7. trade substitute coins
     if (CONST.TRADE_SUBS) await tradeSubs(budget);
   } else {
     ora().warn('Need more funds in your account');
@@ -106,16 +108,6 @@ const getBudget = async (balances) => {
 };
 
 /*
-  Cancels all outstanding orders
-*/
-const cancelOrders = async () => {
-  const orders = await Binance.client.openOrders();
-  await asyncForEach(orders, async (order) => {
-    await Binance.cancelOrder(order.symbol, order.orderId);
-  });
-};
-
-/*
   Check any substitute holdings to see if they should be sold
 */
 const checkOnSubs = async (balances) => {
@@ -123,8 +115,7 @@ const checkOnSubs = async (balances) => {
   await asyncForEach(subHoldings, async (balance) => {
     const coin = balance.ASSET;
     if (!(await tradeDecision(coin))) {
-      const orderSpinner = ora({ indent: 2 });
-      orderSpinner.start(`Selling substitute ${coin} holdings`);
+      const orderSpinner = ora({ indent: 2 }).start(`Selling substitute ${coin} holdings`);
       await sendOrder('SELL', await getBalance(coin), coin, orderSpinner);
     }
   });
@@ -136,8 +127,9 @@ const checkOnSubs = async (balances) => {
 const fillMinBNB = async () => {
   const amountShort = Math.ceil(CONST.MIN_BNB - (await getBalance('BNB')));
   if (amountShort > 0) {
-    const orderSpinner = ora({ indent: 2 });
-    orderSpinner.start(`Short ${amountShort} BNB from set minimum, attempting buy order`);
+    const orderSpinner = ora({ indent: 2 }).start(
+      `Short ${amountShort} BNB from set minimum, attempting buy order`,
+    );
     await verifyBuy(amountShort, 'BNB', orderSpinner);
   }
 };
@@ -189,49 +181,58 @@ const tradeSubs = async (budget) => {
   // get remaining trade pair balance in USD
   let tradePairValue = await getTradePairUSDValue();
 
-  // set max USD order value for each substitute
-  const maxOrder = budget.USD * CONST.MAX_SUBSTITUTE_PERCENTAGE;
+  if (tradePairValue > CONST.USD_TRADE_MIN) {
+    // set max USD order value for each substitute
+    const maxOrder = budget.USD * CONST.MAX_SUBSTITUTE_PERCENTAGE;
 
-  let index = 0;
-  // continue trading as long as you have enough excess value in USD
-  (async function loop() {
-    if (
-      tradePairValue > CONST.USD_TRADE_MIN
-      && maxOrder > CONST.USD_TRADE_MIN
-      && CONST.SUBSTITUTES[index]
-    ) {
-      const coin = CONST.SUBSTITUTES[index];
-      const holding = balances.filter(balance => balance.ASSET === coin);
-      const makeTrade = holding.length > 0 ? false : await tradeDecision(coin);
-      if (makeTrade) {
-        const total = tradePairValue > maxOrder
-          ? await exchangeValue(maxOrder, CONST.STABLE_PAIR, coin)
-          : await exchangeValue(tradePairValue, CONST.STABLE_PAIR, coin);
-        const orderSpinner = ora({ indent: 2 });
-        orderSpinner.start(`Buying ${total} of substitute ${coin}`);
-        await sendOrder('BUY', total, coin, orderSpinner);
-        tradePairValue -= maxOrder;
+    // calculate recommended subs
+    const recs = await recommender();
+    console.log(`
+    =============================================
+    Recomendations: (${tradePairValue} ${CONST.TRADE_PAIR} remaining)
+    `);
+    console.table(recs);
+
+    let index = 0;
+    // continue trading as long as you have enough excess value in USD
+    (async function loop() {
+      if (tradePairValue > CONST.USD_TRADE_MIN && maxOrder > CONST.USD_TRADE_MIN && recs[index]) {
+        const { COIN } = recs[index];
+        const holding = balances.filter(balance => balance.ASSET === COIN)[0];
+        const currentValue = holding
+          ? await exchangeValue(holding.BAL, CONST.STABLE_PAIR, COIN)
+          : 0;
+        const diff = maxOrder - currentValue;
+
+        if (diff > 0) {
+          const quantity = tradePairValue > diff
+            ? await exchangeValue(diff, CONST.STABLE_PAIR, COIN)
+            : await exchangeValue(tradePairValue, CONST.STABLE_PAIR, COIN);
+
+          const orderSpinner = ora({ indent: 2 }).start(`Attempting order for ${quantity} ${COIN}`);
+          await sendOrder('BUY', quantity, COIN, orderSpinner);
+          tradePairValue -= maxOrder;
+        }
+        index += 1;
+        loop();
       }
-      index += 1;
-      loop();
-    }
-  }());
+    }());
+  }
 };
 
 /*
-  Sells coin holdings into your trade pair if not included in main allocation
-  Returns true if enough funds are now met
+  Sells a single sub holding at market into your trade pair
 */
-const liquidateSubs = async (quantity, coin) => {
+const liquidateSub = async () => {
   const balances = await getBalances();
   const subHoldings = getSubHoldings(balances);
   if (subHoldings.length > 0) {
-    const orderSpinner = ora({ indent: 2 });
-    orderSpinner.start(`Need more ${CONST.TRADE_PAIR} funds, liquidating substitutes`);
-    await asyncForEach(subHoldings, async asset => sendOrder('SELL', asset.BAL, asset.ASSET, orderSpinner));
-    return checkFunds(quantity, coin);
+    const sub = subHoldings[0];
+    const orderSpinner = ora({ indent: 2 }).start(
+      `Need more ${CONST.TRADE_PAIR} funds, selling ${sub.ASSET}`,
+    );
+    await sendOrder('SELL', sub.BAL, sub.ASSET, orderSpinner, 'MARKET');
   }
-  return false;
 };
 
 /*
@@ -247,19 +248,19 @@ const tradeDecision = async (coin) => {
  Handles sufficient balance verification for buy orders
 */
 const verifyBuy = async (quantity, coin, orderSpinner) => {
-  let enoughFunds = await checkFunds(quantity, coin);
-  if (!enoughFunds) {
-    // sell any substitute coins and retry
-    enoughFunds = await liquidateSubs(quantity, coin);
+  // sell a sub holding if not enough funds
+  if (!(await checkFunds(quantity, coin))) {
+    await liquidateSub();
   }
-  if ((await getTradePairUSDValue()) > CONST.USD_TRADE_MIN || coin === 'BNB') {
+
+  if ((await getTradePairUSDValue()) < CONST.USD_TRADE_MIN && coin !== 'BNB') {
+    orderSpinner.warn(`Not enough ${CONST.TRADE_PAIR} funds, skipping order`);
+  } else {
     // set quantity to max bal if still not enough funds
-    const total = enoughFunds
+    const total = (await checkFunds(quantity, coin))
       ? quantity
       : await exchangeValue(await getBalance(CONST.TRADE_PAIR), CONST.TRADE_PAIR, coin);
 
     await sendOrder('BUY', total, coin, orderSpinner);
-  } else {
-    orderSpinner.warn(`Not enough ${CONST.TRADE_PAIR} funds, skipping order`);
   }
 };

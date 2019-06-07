@@ -45,7 +45,7 @@ export const avgPrice = symbol => client
 /* Private REST Endpoints */
 
 // Creates a limit order.
-export const limitOrder = (side, symbol, quantity, price) => client
+export const limitOrder = (side, quantity, symbol, price) => client
   .order({
     type: 'LIMIT',
     side,
@@ -56,7 +56,7 @@ export const limitOrder = (side, symbol, quantity, price) => client
   .then(res => `LIMIT ${res.side} ORDER: ${res.origQty} ${res.symbol} at ${res.price}`)
   .catch(error => error);
 // Creates a market order.
-export const marketOrder = (side, symbol, quantity) => client
+export const marketOrder = (side, quantity, symbol) => client
   .order({
     type: 'MARKET',
     side,

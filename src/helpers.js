@@ -5,12 +5,12 @@ import * as CONST from './constants';
 /*
   Allows for await in an async for each loop
 */
-export const asyncForEach = async (array, callback) => {
+export async function asyncForEach(array, callback) {
   for (let index = 0; index < array.length; index += 1) {
     // eslint-disable-next-line no-await-in-loop
     await callback(array[index], index, array);
   }
-};
+}
 
 /*
   Get price of symbol in pair value
@@ -51,7 +51,7 @@ export const getOpens = async (symbol, interval, limit) => {
 */
 export const getVolumes = async (symbol, interval, limit) => {
   const result = await Binance.candles(symbol, interval, limit);
-  return result.map(candle => parseFloat(candle.volume));
+  return result.map(candle => parseFloat(candle.quoteVolume));
 };
 
 /*
@@ -102,6 +102,16 @@ export const getBalance = async (symbol) => {
   const balance = result.balances.filter(coin => coin.asset === symbol)[0];
   const { free, total } = parseBalances(balance);
   return symbol === CONST.TRADE_PAIR ? free : total;
+};
+
+/*
+  Cancels all outstanding orders
+*/
+export const cancelOrders = async () => {
+  const orders = await Binance.client.openOrders();
+  await asyncForEach(orders, async (order) => {
+    if (process.env.NODE_ENV === 'production') await Binance.cancelOrder(order.symbol, order.orderId);
+  });
 };
 
 /*
@@ -208,7 +218,7 @@ export const getLimit = async (info, side) => {
   Finalize price and put in buy or sell orders
   Uses market orders for sells to make sure it triggers
 */
-export const sendOrder = async (side, total, coin, orderSpinner) => {
+export const sendOrder = async (side, total, coin, orderSpinner, type = 'LIMIT') => {
   const symbol = coin + CONST.TRADE_PAIR;
   const info = await getTickerInfo(symbol);
   const price = await getLimit(info, side);
@@ -216,16 +226,18 @@ export const sendOrder = async (side, total, coin, orderSpinner) => {
     const quantity = side === 'BUY'
       ? formatQuantity(info, total - (CONST.TRADE_FEE * total) / 100)
       : formatQuantity(info, total);
-    let res = await Binance.limitOrder(side, symbol, quantity, price);
-    if (!res.code) {
-      orderSpinner.info(res);
-    } else {
+
+    let res;
+    if (type === 'LIMIT') res = await Binance.limitOrder(side, quantity, symbol, price);
+    else res = await Binance.marketOrder(side, quantity, symbol);
+    if (res.code) {
       orderSpinner.warn(`Order failed with: ${res}`);
-      const newSpinner = ora({ indent: 2 });
-      newSpinner.start('Attempting order with lower quantity');
-      const newQ = quantity - (CONST.TRADE_FEE * quantity) / 100;
-      res = await Binance.limitOrder(side, symbol, newQ, price);
+      const newQ = quantity - (0.1 * quantity) / 100;
+      const newSpinner = ora({ indent: 2 }).start('Attempting one more time');
+      res = await Binance.limitOrder(side, newQ, symbol, price);
       newSpinner.info(res.code ? 'Skipping order' : res);
+    } else {
+      orderSpinner.info(res);
     }
   }
 };

@@ -45,7 +45,7 @@ This is an experimental terminal bot for auto trading on binance.com exchange
     $ docker build -t bot-img .
 
     # Run the image
-    $ docker run -d -t -i --name crypto-bot bot-img
+    $ docker run -d -ti --name crypto-bot bot-img
 
     # Print bots output logs
     $ docker logs crypto-bot

@@ -11,7 +11,7 @@ WORKDIR /home/satoshi/bot
 
 # Install bot dependencies
 COPY package.json yarn.lock ./
-RUN apk add --no-cache --virtual .gyp python make g++ libc6-compat alpine-sdk \
+RUN apk add --no-cache --virtual .gyp python make g++ tzdata \
     && yarn \
     && apk del .gyp \
     && chown -R satoshi /home/satoshi/bot \
@@ -21,7 +21,7 @@ RUN apk add --no-cache --virtual .gyp python make g++ libc6-compat alpine-sdk \
 COPY . . 
 
 ENV NODE_ENV production
-ENV TF_CPP_MIN_LOG_LEVEL 3
+ENV TZ America/Los_Angeles
 
 USER satoshi
 CMD [ "yarn", "start" ]

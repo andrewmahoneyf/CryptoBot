@@ -19,18 +19,19 @@ const getRSI = async (symbol, interval) => {
   function to check for overbought or oversold signals
   return bool true if it's not overbought for all time intervals
 */
-export default async (symbol) => {
+export default async (symbol, log = true) => {
   let allRSIsPass = true;
   await asyncForEach(CONST.CHART_INTERVALS, async (interval) => {
-    const spinner = ora(`${symbol} RSI`).start();
+    let spinner;
+    if (log) {
+      spinner = ora(`${symbol} RSI`).start();
+    }
     const current = await getRSI(symbol, interval);
     const res = `${symbol} ${interval} RSI: ${current}`;
     if (current > 85) {
       allRSIsPass = false;
-      spinner.fail(res);
-    } else {
-      spinner.succeed(res);
-    }
+      if (spinner) spinner.fail(res);
+    } else if (spinner) spinner.succeed(res);
   });
   return allRSIsPass;
 };

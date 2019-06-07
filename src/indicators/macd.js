@@ -19,19 +19,20 @@ const getMACD = async (symbol, interval) => {
   function to check for bear/bull crosses in MACD
   return bool true if positive histogram for all time intervals
 */
-export default async (symbol) => {
+export default async (symbol, log = true) => {
   let allMACDsPass = true;
   await asyncForEach(CONST.CHART_INTERVALS, async (interval) => {
-    const spinner = ora(`${symbol} MACD`).start();
+    let spinner;
+    if (log) {
+      spinner = ora(`${symbol} MACD`).start();
+    }
     const macd = await getMACD(symbol, interval);
     const current = macd.pop();
     const res = `${symbol} ${interval} MACD: ${current.histogram}`;
     if (current.histogram < 0) {
       allMACDsPass = false;
-      spinner.fail(res);
-    } else {
-      spinner.succeed(res);
-    }
+      if (spinner) spinner.fail(res);
+    } else if (spinner) spinner.succeed(res);
   });
   return allMACDsPass;
 };
