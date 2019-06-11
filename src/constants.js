@@ -6,36 +6,21 @@
 */
 
 export const ALLOCATION = {
-  LTC: 0.2,
+  LTC: 0.3,
+  BTC: 0.2,
+  ETH: 0.1,
   BNB: 0.1,
   ADA: 0.1,
   EOS: 0.1,
-  VET: 0.1,
-  ONE: 0.1,
-  XLM: 0.05,
-  OMG: 0.05,
-  NANO: 0.05,
+  VET: 0.05,
+  ONE: 0.05,
 };
 
 export const ALLOCATION_KEYS = Object.keys(ALLOCATION);
 
 // Coins to be tested if you have remaining allocation or USD funds
 export const TRADE_SUBS = true;
-export const SUBSTITUTES = [
-  'BTC',
-  'ETH',
-  'XRP',
-  'TRX',
-  'ONT',
-  'ENJ',
-  'BTT',
-  'BAT',
-  'QTUM',
-  'ICX',
-  'NEO',
-  'IOTA',
-  'THETA',
-];
+export const SUBSTITUTES = ['XLM', 'XRP', 'OMG', 'TRX', 'ONT', 'QTUM', 'ICX', 'NEO', 'IOTA'];
 // Maximum percentage of total budget a subtitute can cover
 export const MAX_SUBSTITUTE_PERCENTAGE = 0.05;
 
@@ -55,6 +40,9 @@ export const TRADE_FEE = 0.0675;
 // Set to true if you wish to gradually sell profits to maintain the allocation percentages
 export const TAKE_PROFITS = true;
 
+// Amount of order hidden in public trade book if allowed for trade pair
+export const ICEBERG_QTY = 0.8;
+
 /*
   ┌────────────── minute (Valid range: 0-59)
   | ┌──────────── hour (valid range: 0-23)
@@ -63,8 +51,8 @@ export const TAKE_PROFITS = true;
   | | | | ┌────── day of the week (valid range: 0-7 or names of the days)
   * * * * *
 */
-// runs every 3 minutes in production
-export const CRON_SCHEDULE = '*/3 * * * *';
+// runs every 10 minutes in production
+export const CRON_SCHEDULE = '*/10 * * * *';
 // runs every 30 seconds in dev for testing
 export const DEV_CRON_SCHEDULE = '*/30 * * * * *';
 
@@ -72,14 +60,12 @@ export const DEV_CRON_SCHEDULE = '*/30 * * * * *';
 export const USD_TRADE_MIN = 100;
 
 // 1m, 3m, 5m, 15m, 30m, 1h, 2h, 4h, 6h, 8h, 12h, 1d, 3d, 1w, 1M
-export const CHART_INTERVALS = ['2h'];
+export const CHART_INTERVALS = ['1h'];
 
 export const MACD_INPUTS = {
-  fastPeriod: 13,
-  slowPeriod: 21,
-  signalPeriod: 8,
-  SimpleMAOscillator: false,
-  SimpleMASignal: false,
+  fastPeriod: 12,
+  slowPeriod: 26,
+  signalPeriod: 9,
 };
 
 export const RSI_INPUTS = {

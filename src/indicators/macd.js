@@ -1,5 +1,5 @@
 import ora from 'ora';
-import { MACD } from 'technicalindicators';
+import chart_utils from 'chart_utils';
 import * as CONST from '../constants';
 import { getCloses, asyncForEach } from '../helpers';
 
@@ -8,11 +8,9 @@ import { getCloses, asyncForEach } from '../helpers';
 */
 const getMACD = async (symbol, interval) => {
   const closes = await getCloses(symbol, interval);
-  const macdInput = {
-    ...CONST.MACD_INPUTS,
-    values: closes,
-  };
-  return MACD.calculate(macdInput);
+  const { fastPeriod, slowPeriod, signalPeriod } = CONST.MACD_INPUTS;
+  const [macd, signal] = chart_utils.macd(closes, fastPeriod, slowPeriod, signalPeriod).pop();
+  return macd - signal;
 };
 
 /*
@@ -26,10 +24,9 @@ export default async (symbol, log = true) => {
     if (log) {
       spinner = ora(`${symbol} MACD`).start();
     }
-    const macd = await getMACD(symbol, interval);
-    const current = macd.pop();
-    const res = `${symbol} ${interval} MACD: ${current.histogram}`;
-    if (current.histogram < 0) {
+    const histogram = await getMACD(symbol, interval);
+    const res = `${symbol} ${interval} MACD: ${histogram}`;
+    if (histogram < 0) {
       allMACDsPass = false;
       if (spinner) spinner.fail(res);
     } else if (spinner) spinner.succeed(res);

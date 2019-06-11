@@ -17,7 +17,7 @@ export const book = (symbol, limit = 5) => client
   .then(res => res)
   .catch(error => error);
 // Retrieves Candlestick for a symbol. Candlesticks are uniquely identified by their open time.
-export const candles = (symbol, interval = '1h', limit = 50) => client
+export const candles = (symbol, interval = '1h', limit = 500) => client
   .candles({ symbol, interval, limit })
   .then(res => res)
   .catch(error => error);
@@ -45,13 +45,14 @@ export const avgPrice = symbol => client
 /* Private REST Endpoints */
 
 // Creates a limit order.
-export const limitOrder = (side, quantity, symbol, price) => client
+export const limitOrder = (side, quantity, symbol, price, icebergQty = 0) => client
   .order({
     type: 'LIMIT',
     side,
     symbol,
     quantity,
     price,
+    icebergQty,
   })
   .then(res => `LIMIT ${res.side} ORDER: ${res.origQty} ${res.symbol} at ${res.price}`)
   .catch(error => error);
@@ -63,7 +64,7 @@ export const marketOrder = (side, quantity, symbol) => client
     symbol,
     quantity,
   })
-  .then(res => `MARKET ${res.side} ORDER: ${res.origQty} ${res.symbol} at ${res.price}`)
+  .then(res => `MARKET ${res.side} ORDER: ${res.origQty} ${res.symbol}`)
   .catch(error => error);
 // Check an order's status.
 export const getOrder = (symbol, orderId) => client

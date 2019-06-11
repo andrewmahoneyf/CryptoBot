@@ -1,18 +1,15 @@
 import ora from 'ora';
-import { RSI } from 'technicalindicators';
+import chart_utils from 'chart_utils';
 import * as CONST from '../constants';
-import { getCloses, asyncForEach } from '../helpers';
+import { getOHLC, asyncForEach } from '../helpers';
 
 /*
   Helper function to get MACD
 */
 const getRSI = async (symbol, interval) => {
-  const closes = await getCloses(symbol, interval);
-  const rsiInput = {
-    ...CONST.RSI_INPUTS,
-    values: closes,
-  };
-  return RSI.calculate(rsiInput).pop();
+  const ohlc = await getOHLC(symbol, interval);
+  const { period } = CONST.RSI_INPUTS;
+  return chart_utils.rsi(ohlc, period).pop();
 };
 
 /*

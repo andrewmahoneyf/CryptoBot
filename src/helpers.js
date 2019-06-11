@@ -55,6 +55,19 @@ export const getVolumes = async (symbol, interval, limit) => {
 };
 
 /*
+  Get symbol volume candle values for given interval
+*/
+export const getOHLC = async (symbol, interval, limit) => {
+  const result = await Binance.candles(symbol, interval, limit);
+  return result.map(candle => ({
+    o: parseFloat(candle.open),
+    h: parseFloat(candle.high),
+    l: parseFloat(candle.low),
+    c: parseFloat(candle.close),
+  }));
+};
+
+/*
   Verify the balance has trade pairs for TRADE_PAIR and STABLE_PAIR
   Returns true if symbol has an exchange pair with both
 */
@@ -222,19 +235,21 @@ export const sendOrder = async (side, total, coin, orderSpinner, type = 'LIMIT')
   const symbol = coin + CONST.TRADE_PAIR;
   const info = await getTickerInfo(symbol);
   const price = await getLimit(info, side);
+
   if (process.env.NODE_ENV === 'production') {
     const quantity = side === 'BUY'
       ? formatQuantity(info, total - (CONST.TRADE_FEE * total) / 100)
       : formatQuantity(info, total);
+    const icebergQty = info.icebergAllowed ? quantity * CONST.ICEBERG_QTY : 0;
 
-    let res;
-    if (type === 'LIMIT') res = await Binance.limitOrder(side, quantity, symbol, price);
-    else res = await Binance.marketOrder(side, quantity, symbol);
+    let res = type === 'LIMIT'
+      ? await Binance.limitOrder(side, quantity, symbol, price, icebergQty)
+      : await Binance.marketOrder(side, quantity, symbol);
     if (res.code) {
       orderSpinner.warn(`Order failed with: ${res}`);
       const newQ = quantity - (0.1 * quantity) / 100;
       const newSpinner = ora({ indent: 2 }).start('Attempting one more time');
-      res = await Binance.limitOrder(side, newQ, symbol, price);
+      res = await Binance.limitOrder(side, newQ, symbol, price, icebergQty);
       newSpinner.info(res.code ? 'Skipping order' : res);
     } else {
       orderSpinner.info(res);

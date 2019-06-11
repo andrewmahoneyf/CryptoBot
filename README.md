@@ -29,7 +29,7 @@ This is an experimental terminal bot for auto trading on binance.com exchange
 
 [binance-api-node](https://github.com/binance-exchange/binance-api-node)
 
-[technicalindicators](https://github.com/anandanand84/technicalindicators)
+[chart_utils](https://github.com/vpfautz/chart_utils)
 
 ## Usage
 

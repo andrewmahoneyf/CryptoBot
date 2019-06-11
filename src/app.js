@@ -53,8 +53,8 @@ scheduleJob(async () => {
     if (CONST.HOLD_BNB) await fillMinBNB();
     // 6. trade main allocations
     await tradeMainAllocations(budget);
-    // 7. trade substitute coins
-    if (CONST.TRADE_SUBS) await tradeSubs(budget);
+    // 7. trade substitute coins if BTC is bullish
+    if (CONST.TRADE_SUBS && (await tradeDecision('BTC', false))) await tradeSubs(budget);
   } else {
     ora().warn('Need more funds in your account');
   }
@@ -200,7 +200,7 @@ const tradeSubs = async (budget) => {
         const { COIN } = recs[index];
         const holding = balances.filter(balance => balance.ASSET === COIN)[0];
         const currentValue = holding
-          ? await exchangeValue(holding.BAL, CONST.STABLE_PAIR, COIN)
+          ? await exchangeValue(holding.BAL, COIN, CONST.STABLE_PAIR)
           : 0;
         const diff = maxOrder - currentValue;
 
@@ -239,9 +239,9 @@ const liquidateSub = async () => {
   Returns true if in a bullish trend and trade should be made.
   NOTE: More indicators may be included to strengthen the trade decision
 */
-const tradeDecision = async (coin) => {
+const tradeDecision = async (coin, log = true) => {
   const symbol = coin + CONST.TRADE_PAIR;
-  return (await indicators.testMACD(symbol)) && indicators.testRSI(symbol);
+  return (await indicators.testMACD(symbol, log)) && indicators.testRSI(symbol, log);
 };
 
 /*
