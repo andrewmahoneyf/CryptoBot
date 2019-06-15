@@ -1,28 +1,40 @@
-/* =======================================
+/*
+  ==========================================================================================
   Fill in your desired portfolio allocation and substitute cryptocurrencies.
   Other variables such as time intervals or order minimums may be adjusted here as well.
   Please note that all coins need a pair with the STABLE and TRADE_PAIR currencies set below.
-  ========================================
+  ==========================================================================================
 */
 
 export const ALLOCATION = {
-  LTC: 0.3,
-  BTC: 0.2,
-  ETH: 0.1,
+  BTC: 0.3,
+  LTC: 0.25,
+  ETH: 0.15,
   BNB: 0.1,
   ADA: 0.1,
   EOS: 0.1,
-  VET: 0.05,
-  ONE: 0.05,
 };
 
 export const ALLOCATION_KEYS = Object.keys(ALLOCATION);
 
 // Coins to be tested if you have remaining allocation or USD funds
 export const TRADE_SUBS = true;
-export const SUBSTITUTES = ['XLM', 'XRP', 'OMG', 'TRX', 'ONT', 'QTUM', 'ICX', 'NEO', 'IOTA'];
+export const SUBSTITUTES = [
+  'XRP',
+  'XLM',
+  'OMG',
+  'TRX',
+  'ONT',
+  'QTUM',
+  'ICX',
+  'NEO',
+  'IOTA',
+];
 // Maximum percentage of total budget a subtitute can cover
 export const MAX_SUBSTITUTE_PERCENTAGE = 0.05;
+// Percentage of sub holding to liquidate when allocations are not met.
+// Set low to gradually fill allocations and avoid large market orders
+export const LIQUIDATE_SUB_PERCENTAGE = 0.05;
 
 // USDT, PAX, TUSD, USDC, USDS
 export const STABLE_PAIR = 'USDT';
@@ -41,7 +53,10 @@ export const TRADE_FEE = 0.0675;
 export const TAKE_PROFITS = true;
 
 // Amount of order hidden in public trade book if allowed for trade pair
-export const ICEBERG_QTY = 0.8;
+export const ICEBERG_QTY = 0.5;
+
+// Amount of allocation to order on first bullish indication. Lower to mitigate false positives
+export const INITIAL_BUY_PERCENTAGE = 0.25;
 
 /*
   ┌────────────── minute (Valid range: 0-59)
@@ -51,8 +66,8 @@ export const ICEBERG_QTY = 0.8;
   | | | | ┌────── day of the week (valid range: 0-7 or names of the days)
   * * * * *
 */
-// runs every 10 minutes in production
-export const CRON_SCHEDULE = '*/10 * * * *';
+// runs every 5 minutes in production
+export const CRON_SCHEDULE = '*/5 * * * *';
 // runs every 30 seconds in dev for testing
 export const DEV_CRON_SCHEDULE = '*/30 * * * * *';
 

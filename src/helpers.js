@@ -24,7 +24,10 @@ const getPrice = async (symbol, pair) => {
   Convert symbol amount to pair value
 */
 export const exchangeValue = async (amount, symbol, pair) => {
-  if (symbol === CONST.STABLE_PAIR || (symbol === 'BTC' && pair !== CONST.STABLE_PAIR)) {
+  if (
+    symbol === CONST.STABLE_PAIR
+    || (symbol === 'BTC' && pair !== CONST.STABLE_PAIR)
+  ) {
     return amount / (await getPrice(pair, symbol));
   }
   return (await getPrice(symbol, pair)) * amount;
@@ -79,7 +82,8 @@ export const verifySymbolPairs = async ({ asset }) => {
 
   const verifiedTradePair = exchangeInfo.symbols.filter(
     pair => pair.baseAsset === asset
-      && (pair.quoteAsset === CONST.TRADE_PAIR || pair.quoteAsset === CONST.STABLE_PAIR),
+      && (pair.quoteAsset === CONST.TRADE_PAIR
+        || pair.quoteAsset === CONST.STABLE_PAIR),
   );
 
   if (CONST.TRADE_PAIR === CONST.STABLE_PAIR) {
@@ -172,7 +176,8 @@ export const checkFunds = async (quantity, coin) => {
   Checks fill quantity to verify if there is enough funds for an order
 */
 export const getSubHoldings = balances => balances.filter(
-  balance => !CONST.ALLOCATION_KEYS.includes(balance.ASSET) && balance.ASSET !== CONST.TRADE_PAIR,
+  balance => !CONST.ALLOCATION_KEYS.includes(balance.ASSET)
+      && balance.ASSET !== CONST.TRADE_PAIR,
 );
 
 /*
@@ -186,7 +191,6 @@ const getTickerInfo = async (symbol) => {
 /*
   Returns defined filters set by binance for a symbol
 */
-// eslint-disable-next-line max-len
 const getTickerFilter = (info, filterType) => info.filters.filter(filter => filter.filterType === filterType)[0];
 
 /*
@@ -231,7 +235,13 @@ export const getLimit = async (info, side) => {
   Finalize price and put in buy or sell orders
   Uses market orders for sells to make sure it triggers
 */
-export const sendOrder = async (side, total, coin, orderSpinner, type = 'LIMIT') => {
+export const sendOrder = async (
+  side,
+  total,
+  coin,
+  orderSpinner,
+  type = 'LIMIT',
+) => {
   const symbol = coin + CONST.TRADE_PAIR;
   const info = await getTickerInfo(symbol);
   const price = await getLimit(info, side);
@@ -240,17 +250,21 @@ export const sendOrder = async (side, total, coin, orderSpinner, type = 'LIMIT')
     const quantity = side === 'BUY'
       ? formatQuantity(info, total - (CONST.TRADE_FEE * total) / 100)
       : formatQuantity(info, total);
-    const icebergQty = info.icebergAllowed ? quantity * CONST.ICEBERG_QTY : 0;
+    const icebergQty = info.icebergAllowed
+      ? formatQuantity(info, quantity * CONST.ICEBERG_QTY)
+      : 0;
 
     let res = type === 'LIMIT'
       ? await Binance.limitOrder(side, quantity, symbol, price, icebergQty)
       : await Binance.marketOrder(side, quantity, symbol);
     if (res.code) {
       orderSpinner.warn(`Order failed with: ${res}`);
-      const newQ = quantity - (0.1 * quantity) / 100;
+      const newQ = formatQuantity(info, quantity * 0.9);
       const newSpinner = ora({ indent: 2 }).start('Attempting one more time');
       res = await Binance.limitOrder(side, newQ, symbol, price, icebergQty);
-      newSpinner.info(res.code ? 'Skipping order' : res);
+      newSpinner.info(
+        res.code ? `Skipping ${side} order for ${quantity} ${coin}` : res,
+      );
     } else {
       orderSpinner.info(res);
     }
