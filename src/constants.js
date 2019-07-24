@@ -69,8 +69,8 @@ export const INITIAL_BUY_PERCENTAGE = 0.25;
   | | | | ┌────── day of the week (valid range: 0-7 or names of the days)
   * * * * *
 */
-// runs every 30 minutes in production
-export const CRON_SCHEDULE = '*/30 * * * *';
+// runs every 10 minutes in production
+export const CRON_SCHEDULE = '*/10 * * * *';
 // runs every 30 seconds in dev for testing
 export const DEV_CRON_SCHEDULE = '*/30 * * * * *';
 

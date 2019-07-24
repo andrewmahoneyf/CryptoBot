@@ -58,10 +58,7 @@ scheduleJob(async () => {
     // 7. trade main allocations
     await tradeMainAllocations(budget);
     // 8. trade substitute coins if BTC is bullish
-    if (
-      CONST.TRADE_SUBS
-      && (CONST.TRADE_PAIR !== 'BTC' && (await tradeDecision('BTC', false)))
-    ) await tradeSubs(budget);
+    if (CONST.TRADE_SUBS) await tradeSubs(budget);
   } else {
     ora().warn('Need more funds in your account');
   }
