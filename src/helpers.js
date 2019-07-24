@@ -135,9 +135,8 @@ export const cancelOrders = async () => {
   Returns the current value of your trade pair in USD
 */
 export const getTradePairUSDValue = async () => {
-  const stablePairs = ['USDT', 'PAX', 'TUSD', 'USDC', 'USDS'];
   const bal = await getBalance(CONST.TRADE_PAIR);
-  return !stablePairs.includes(CONST.TRADE_PAIR)
+  return !CONST.STABLE_PAIRS.includes(CONST.TRADE_PAIR)
     ? exchangeValue(bal, CONST.TRADE_PAIR, CONST.STABLE_PAIR)
     : bal;
 };
@@ -238,11 +237,10 @@ export const getLimit = async (info, side) => {
 export const sendOrder = async (
   side,
   total,
-  coin,
+  symbol,
   orderSpinner,
   type = 'LIMIT',
 ) => {
-  const symbol = coin + CONST.TRADE_PAIR;
   const info = await getTickerInfo(symbol);
   const price = await getLimit(info, side);
 
@@ -263,7 +261,7 @@ export const sendOrder = async (
       const newSpinner = ora({ indent: 2 }).start('Attempting one more time');
       res = await Binance.limitOrder(side, newQ, symbol, price, icebergQty);
       newSpinner.info(
-        res.code ? `Skipping ${side} order for ${quantity} ${coin}` : res,
+        res.code ? `Skipping ${side} order for ${quantity} ${symbol}` : res,
       );
     } else {
       orderSpinner.info(res);

@@ -7,12 +7,12 @@
 */
 
 export const ALLOCATION = {
-  BTC: 0.3,
-  LTC: 0.25,
-  ETH: 0.15,
+  BTC: 0.4,
+  ETH: 0.2,
+  LTC: 0.2,
   BNB: 0.1,
-  ADA: 0.1,
-  EOS: 0.1,
+  ADA: 0.05,
+  EOS: 0.05,
 };
 
 export const ALLOCATION_KEYS = Object.keys(ALLOCATION);
@@ -20,9 +20,11 @@ export const ALLOCATION_KEYS = Object.keys(ALLOCATION);
 // Coins to be tested if you have remaining allocation or USD funds
 export const TRADE_SUBS = true;
 export const SUBSTITUTES = [
+  'LINK',
   'XRP',
   'XLM',
   'OMG',
+  'VET',
   'TRX',
   'ONT',
   'QTUM',
@@ -37,6 +39,7 @@ export const MAX_SUBSTITUTE_PERCENTAGE = 0.05;
 export const LIQUIDATE_SUB_PERCENTAGE = 0.05;
 
 // USDT, PAX, TUSD, USDC, USDS
+export const STABLE_PAIRS = ['USDT', 'PAX', 'TUSD', 'USDC', 'USDS'];
 export const STABLE_PAIR = 'USDT';
 // Pair to use for all trades. Typically would be a stable coin, BTC, or BNB
 export const TRADE_PAIR = 'USDT';
@@ -66,8 +69,8 @@ export const INITIAL_BUY_PERCENTAGE = 0.25;
   | | | | ┌────── day of the week (valid range: 0-7 or names of the days)
   * * * * *
 */
-// runs every 5 minutes in production
-export const CRON_SCHEDULE = '*/5 * * * *';
+// runs every 30 minutes in production
+export const CRON_SCHEDULE = '*/30 * * * *';
 // runs every 30 seconds in dev for testing
 export const DEV_CRON_SCHEDULE = '*/30 * * * * *';
 
@@ -75,7 +78,7 @@ export const DEV_CRON_SCHEDULE = '*/30 * * * * *';
 export const USD_TRADE_MIN = 100;
 
 // 1m, 3m, 5m, 15m, 30m, 1h, 2h, 4h, 6h, 8h, 12h, 1d, 3d, 1w, 1M
-export const CHART_INTERVALS = ['1h'];
+export const CHART_INTERVALS = ['1d'];
 
 export const MACD_INPUTS = {
   fastPeriod: 12,

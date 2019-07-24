@@ -38,7 +38,11 @@ scheduleJob(async () => {
   });
   // 2. cancel any outstanding orders
   await cancelOrders();
-  // 3. verify current funds
+  // 3. spend any stable currency if using BTC as trade pair
+  if (CONST.TRADE_PAIR === 'BTC') {
+    await spendStableHoldings();
+  }
+  // 4. verify current funds
   const balances = await getBalances();
   console.log('Balances:');
   console.table(balances);
@@ -47,14 +51,17 @@ scheduleJob(async () => {
   console.table(budget);
 
   if (budget.USD > CONST.USD_TRADE_MIN) {
-    // 4. check if substitute positions should be sold
+    // 5. check if substitute positions should be sold
     await checkOnSubs(balances);
-    // 5. check BNB balance if min holding set
+    // 6. check BNB balance if min holding set
     if (CONST.HOLD_BNB) await fillMinBNB();
-    // 6. trade main allocations
+    // 7. trade main allocations
     await tradeMainAllocations(budget);
-    // 7. trade substitute coins if BTC is bullish
-    if (CONST.TRADE_SUBS && (await tradeDecision('BTC', false))) await tradeSubs(budget);
+    // 8. trade substitute coins if BTC is bullish
+    if (
+      CONST.TRADE_SUBS
+      && (CONST.TRADE_PAIR !== 'BTC' && (await tradeDecision('BTC', false)))
+    ) await tradeSubs(budget);
   } else {
     ora().warn('Need more funds in your account');
   }
@@ -118,7 +125,12 @@ const checkOnSubs = async (balances) => {
       const orderSpinner = ora({ indent: 2 }).start(
         `Selling substitute ${coin} holdings`,
       );
-      await sendOrder('SELL', await getBalance(coin), coin, orderSpinner);
+      await sendOrder(
+        'SELL',
+        await getBalance(coin),
+        `${coin}${CONST.TRADE_PAIR}`,
+        orderSpinner,
+      );
     }
   });
 };
@@ -134,6 +146,28 @@ const fillMinBNB = async () => {
     );
     await verifyBuy(amountShort, 'BNB', orderSpinner);
   }
+};
+
+/*
+  Spends any stable pair holdings on trade pair
+*/
+const spendStableHoldings = async () => {
+  await asyncForEach(CONST.STABLE_PAIRS, async (coin) => {
+    const bal = await getBalance(coin);
+    if (bal > 1) {
+      const quantity = await exchangeValue(bal, coin, CONST.TRADE_PAIR);
+      const orderSpinner = ora({ indent: 2 }).start(
+        `Using ${coin} holdings for ${quantity}${CONST.TRADE_PAIR}`,
+      );
+      await sendOrder(
+        'BUY',
+        quantity,
+        `${CONST.TRADE_PAIR}${coin}`,
+        orderSpinner,
+        'MARKET',
+      );
+    }
+  });
 };
 
 /*
@@ -166,7 +200,12 @@ const tradeMainAllocations = async (budget) => {
           orderSpinner.start(
             `${coin} allocation is too high, selling difference`,
           );
-          await sendOrder('SELL', diff.QUANTITY, coin, orderSpinner);
+          await sendOrder(
+            'SELL',
+            diff.QUANTITY,
+            `${coin}${CONST.TRADE_PAIR}`,
+            orderSpinner,
+          );
         }
       }
     } else if (CONST.HOLD_BNB && coin === 'BNB') {
@@ -175,20 +214,35 @@ const tradeMainAllocations = async (budget) => {
       const value = await exchangeValue(diff, 'BNB', CONST.STABLE_PAIR);
       if (diff > 0 && value > CONST.USD_TRADE_MIN) {
         orderSpinner.start(`Selling extra ${diff} BNB`);
-        await sendOrder('SELL', diff, coin, orderSpinner);
+        await sendOrder(
+          'SELL',
+          diff,
+          `${coin}${CONST.TRADE_PAIR}`,
+          orderSpinner,
+        );
       }
     } else if (holdings > CONST.USD_TRADE_MIN) {
       // sell total current balance if bearish
-      const tradeHist = await Binance.myTrades(coin + CONST.TRADE_PAIR);
+      const tradeHist = await Binance.myTrades(`${coin}${CONST.TRADE_PAIR}`);
       const lastTrade = tradeHist.pop();
       const timeDiff = moment().diff(lastTrade.time, 'minutes', true);
       // minimize sell order after recent purchase in case of false negative
       if (lastTrade.isBuyer && timeDiff < 20) {
         orderSpinner.start(`Selling 25% of holdings for ${coin}`);
-        await sendOrder('SELL', bal * 0.25, coin, orderSpinner);
+        await sendOrder(
+          'SELL',
+          bal * 0.25,
+          `${coin}${CONST.TRADE_PAIR}`,
+          orderSpinner,
+        );
       } else {
         orderSpinner.start(`Selling all holdings for ${coin}`);
-        await sendOrder('SELL', bal, coin, orderSpinner);
+        await sendOrder(
+          'SELL',
+          bal,
+          `${coin}${CONST.TRADE_PAIR}`,
+          orderSpinner,
+        );
       }
     }
   });
@@ -237,7 +291,12 @@ const tradeSubs = async (budget) => {
             const orderSpinner = ora({ indent: 2 }).start(
               `Attempting order for ${quantity} ${COIN}`,
             );
-            await sendOrder('BUY', quantity, COIN, orderSpinner);
+            await sendOrder(
+              'BUY',
+              quantity,
+              `${COIN}${CONST.TRADE_PAIR}`,
+              orderSpinner,
+            );
             tradePairValue -= diff;
           }
           index += 1;
@@ -284,7 +343,13 @@ const liquidateSub = async (fundsNeeded) => {
         );
       } else finalQuantity = sub.BAL;
 
-      await sendOrder('SELL', finalQuantity, sub.ASSET, orderSpinner, 'MARKET');
+      await sendOrder(
+        'SELL',
+        finalQuantity,
+        `${sub.ASSET}${CONST.TRADE_PAIR}`,
+        orderSpinner,
+        'MARKET',
+      );
     });
   }
 };
@@ -322,6 +387,6 @@ const verifyBuy = async (quantity, coin, orderSpinner) => {
         coin,
       );
 
-    await sendOrder('BUY', total, coin, orderSpinner);
+    await sendOrder('BUY', total, `${coin}${CONST.TRADE_PAIR}`, orderSpinner);
   }
 };
