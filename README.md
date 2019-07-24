@@ -2,7 +2,9 @@
 
 ## NodeJS trading bot for Binance
 
-This is an experimental terminal bot for auto trading on binance.com exchange
+This is an experimental terminal bot for auto trading on binance.com exchange.
+
+Due to Binance suspending US customers from their site, I have postponed development until further details are released about Binance US. 
 
 ## Configuration
 
