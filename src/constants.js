@@ -9,10 +9,11 @@
 export const ALLOCATION = {
   BTC: 0.4,
   ETH: 0.2,
-  LTC: 0.2,
+  LTC: 0.15,
   BNB: 0.1,
   ADA: 0.05,
   EOS: 0.05,
+  LINK: 0.05,
 };
 
 export const ALLOCATION_KEYS = Object.keys(ALLOCATION);
@@ -20,7 +21,6 @@ export const ALLOCATION_KEYS = Object.keys(ALLOCATION);
 // Coins to be tested if you have remaining allocation or USD funds
 export const TRADE_SUBS = true;
 export const SUBSTITUTES = [
-  'LINK',
   'XRP',
   'XLM',
   'OMG',
@@ -31,6 +31,8 @@ export const SUBSTITUTES = [
   'ICX',
   'NEO',
   'IOTA',
+  'NANO',
+  'ENJ',
 ];
 // Maximum percentage of total budget a subtitute can cover
 export const MAX_SUBSTITUTE_PERCENTAGE = 0.05;

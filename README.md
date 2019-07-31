@@ -4,7 +4,7 @@
 
 This is an experimental terminal bot for auto trading on binance.com exchange.
 
-Due to Binance suspending US customers from their site, I have postponed development until further details are released about Binance US. 
+Due to Binance suspending US customers from their site, I have postponed development until further details are released about Binance US.
 
 ## Configuration
 
@@ -16,9 +16,11 @@ Due to Binance suspending US customers from their site, I have postponed develop
 
 4.  Create a `.env` file and insert your API and Secret Keys
 
-    API_KEY=...
+    `cp .env.tmpl .env`
 
-    API_SECRET=...
+        API_KEY=...
+
+        API_SECRET=...
 
 5.  If holding BNB, turn on using BNB for trade fees in your [account](https://www.binance.com/userCenter/myAccount.html) to save 25%. Option to hold BNB along with the min balance can be set in the `constants.js` file. More about trade fees and tiers can be found [here](https://www.binance.com/en/fee/schedule).
 
